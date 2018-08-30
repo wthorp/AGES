@@ -11,3 +11,5 @@ For a high-level language view of what a client might do, see Cesium's JS client
 https://raw.githubusercontent.com/AnalyticalGraphicsInc/cesium/1.45/Source/Core/GoogleEarthEnterpriseMetadata.js
 https://raw.githubusercontent.com/AnalyticalGraphicsInc/cesium/1.45/Source/Scene/GoogleEarthEnterpriseImageryProvider.js
 
+
+There's a functioning version of this code, but I never released it.  If anyone is interested, send me a message.
