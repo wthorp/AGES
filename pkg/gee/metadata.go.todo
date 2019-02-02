@@ -1,0 +1,166 @@
+package gee
+
+import (
+	"bytes"
+	"fmt"
+)
+
+const (
+	qtMagic               = 32301
+	anyChildBitmask  byte = 0x0F //0x01 & 0x02 & 0x04 & 0x08
+	cacheFlagBitmask byte = 0x10
+	imageBitmask     byte = 0x40
+	terrainBitmask   byte = 0x80
+)
+
+type TileInformation struct {
+	Bits               byte //todo: determine size of this?
+	CnodeVersion       uint16
+	ImageryVersion     uint16
+	TerrainVersion     uint16
+	ImageryProvider    uint8
+	TerrainProvider    uint8
+	AncestorHasTerrain bool
+	TerrainState       int //?
+}
+
+func (ti TileInformation) SetParent(parent TileInformation) {
+	ti.AncestorHasTerrain = parent.AncestorHasTerrain || ti.HasTerrain()
+}
+func (ti TileInformation) HasSubtree() bool {
+	return ti.Bits&cacheFlagBitmask != 0
+}
+func (ti TileInformation) HasImagery() bool {
+	return ti.Bits&imageBitmask != 0
+}
+func (ti TileInformation) HasTerrain() bool {
+	return ti.Bits&terrainBitmask != 0
+}
+func (ti TileInformation) HasChildren() bool {
+	return ti.Bits&anyChildBitmask != 0
+}
+func (ti TileInformation) HasChild(index uint) bool {
+	return ti.Bits&(1<<index) != 0
+}
+func (ti TileInformation) GetChildBitmask() byte {
+	return ti.Bits & anyChildBitmask
+}
+
+func processMetadata(buffer []byte, totalSize int, quadKey string) (map[string]TileInformation, error) {
+	dv := bytes.NewBuffer(buffer)
+	var offset = 0
+	var magic = 0 //dv.getUint32(offset, true)
+	offset += 4
+	if magic != qtMagic {
+		return nil, fmt.Errorf("Invalid magic")
+	}
+	var dataTypeId = 0 //dv.getUint32(offset, true)
+	offset += 4
+	if dataTypeId != 1 {
+		return nil, fmt.Errorf("Invalid data type. Must be 1 for QuadTreePacket")
+	}
+	// Tile format version
+	var quadVersion = 0 //dv.getUint32(offset, true)
+	offset += 4
+	if quadVersion != 2 {
+		return nil, fmt.Errorf("Invalid QuadTreePacket version. Only version 2 is supported.")
+	}
+	var numInstances = 0 //dv.getInt32(offset, true)
+	offset += 4
+	var dataInstanceSize = 0 //dv.getInt32(offset, true)
+	offset += 4
+	if dataInstanceSize != 32 {
+		return nil, fmt.Errorf("Invalid instance size.")
+	}
+	var dataBufferOffset = 0 //dv.getInt32(offset, true)
+	offset += 4
+	var dataBufferSize = 0 //dv.getInt32(offset, true)
+	offset += 4
+	var metaBufferSize = 0 //dv.getInt32(offset, true)
+	offset += 4
+	// Offset from beginning of packet (instances + current offset)
+	if dataBufferOffset != (numInstances*dataInstanceSize + offset) {
+		return nil, fmt.Errorf("Invalid dataBufferOffset")
+	}
+	// Verify the packets is all there header + instances + dataBuffer + metaBuffer
+	if dataBufferOffset+dataBufferSize+metaBufferSize != totalSize {
+		return nil, fmt.Errorf("Invalid packet offsets")
+	}
+	// Read all the instances
+	var instances []TileInformation
+	for i := 0; i <= numInstances; i++ {
+		var bitfield = byte(0) //dv.getUint8(offset)
+		offset++
+		offset++                     // 2 byte align
+		var cnodeVersion = uint16(0) //dv.getUint16(offset, true)
+		offset += 2
+		var imageVersion = uint16(0) //dv.getUint16(offset, true)
+		offset += 2
+		var terrainVersion = uint16(0) //dv.getUint16(offset, true)
+		offset += 2
+		// Number of channels stored in the dataBuffer
+		offset += 2
+		offset += 2 // 4 byte align
+		// Channel type offset into dataBuffer
+		offset += 4
+		// Channel version offset into dataBuffer
+		offset += 4
+		offset += 8 // Ignore image neighbors for now
+		// Data providers
+		var imageProvider = uint8(0) //dv.getUint8(offset)
+		offset++
+		var terrainProvider = uint8(0) //dv.getUint8(offset)
+		offset++
+		offset += 2 // 4 byte align
+
+		instances = append(instances, TileInformation{bitfield, cnodeVersion,
+			imageVersion, terrainVersion, imageProvider, terrainProvider, false, 0})
+	}
+
+	var tileInfo map[string]TileInformation
+	var index = 0
+	var level = 0
+	var root = instances[index]
+	index++
+	if quadKey == "" {
+		level++ // Root tile has data at its root and one less level
+	} else {
+		tileInfo[quadKey] = root // This will only contain the child bitmask
+	}
+	populateTiles(quadKey, root, level, tileInfo)
+
+	return tileInfo, nil
+}
+
+func populateTiles(parentKey string, parent TileInformation, level int, tileInfo map[string]TileInformation, index *int) {
+	isLeaf := false
+	if level == 4 {
+		if parent.HasSubtree() {
+			return // We have a subtree, so just return
+		}
+		isLeaf = true // No subtree, so set all children to null
+	}
+	for i := uint(0); i <= 4; i++ {
+		var childKey = fmt.Sprintf("%s%d", parentKey, i)
+		if isLeaf {
+			// No subtree so set all children to null
+			// tileInfo[childKey] = nil
+		} else if level < 4 {
+			// We are still in the middle of the subtree, so add child
+			//  only if their bits are set, otherwise set child to null.
+			if !parent.HasChild(i) {
+				//tileInfo[childKey] = nil
+			} else {
+				if index == numInstances {
+					console.log("Incorrect number of instances")
+					return nil
+				}
+
+				var instance = instances[index]
+				index++
+				tileInfo[childKey] = instance
+				populateTiles(childKey, instance, level+1)
+			}
+		}
+	}
+}
