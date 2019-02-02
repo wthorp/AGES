@@ -12,7 +12,10 @@ import (
 )
 
 func main() {
-	geeProxy := &gee.CachingProxy{URL: "http://www.earthenterprise.org/3d/"}
+	geeProxy := &gee.CachingProxy{
+		URL:        "http://www.earthenterprise.org/3d/",
+		ImgHandler: gee.PipeHandler,
+	}
 	//create a url router to handle different endpoints
 	r := mux.NewRouter()
 	r.HandleFunc("/dbRoot.v5", gee.DBRootHandler)

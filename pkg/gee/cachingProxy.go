@@ -13,7 +13,8 @@ import (
 
 //CachingProxy proxies files
 type CachingProxy struct {
-	URL string
+	URL        string
+	ImgHandler func(w http.ResponseWriter, r *http.Request, quadkey string, version string)
 }
 
 func (p *CachingProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +29,7 @@ func (p *CachingProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "q2": //-q
 		q2Handler(w, r, quadkey, version)
 	case "f1": //-i
-		pipeHandler(w, r, quadkey, version)
+		p.ImgHandler(w, r, quadkey, version)
 	case "f1c": //-t
 		f1cHandler(w, r, quadkey, version)
 	default:

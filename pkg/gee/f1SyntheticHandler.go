@@ -26,8 +26,8 @@ func init() {
 	}
 }
 
-//f1Handler returns a dbRoot object
-func pipeHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
+//PipeHandler returns Magritte's pipe image
+func PipeHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
 	//get EncryptedDbRoot json data
 	jpgType := keyhole.EarthImageryPacket_JPEG
 	eip := &keyhole.EarthImageryPacket{ImageType: &jpgType, ImageData: pipeBytes}
@@ -44,8 +44,8 @@ func pipeHandler(w http.ResponseWriter, r *http.Request, quadkey string, version
 	w.Write(eipBytes)
 }
 
-//f1Handler returns a dbRoot object
-func osmHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
+//OSMHandler returns OpenStreetMap imagery
+func OSMHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
 	//get EncryptedDbRoot json data
 
 	x, y, z := quadKeyToTileXY(quadkey)
@@ -81,8 +81,8 @@ func osmHandler(w http.ResponseWriter, r *http.Request, quadkey string, version 
 
 const tileSize = 256
 
-func fractalHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
-
+//FractalHandler returns fractal imagery
+func FractalHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
 	x, y, z := quadKeyToTileXY(quadkey)
 	fmt.Printf("%s => %d/%d/%d\n", quadkey, x, y, z)
 
