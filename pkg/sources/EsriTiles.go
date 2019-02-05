@@ -1,21 +1,21 @@
 package sources
 
 import (
-    "encoding/xml"
-    "fmt"
-    "log"
+	"encoding/binary"
+	"encoding/xml"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
-	"io/ioutil"
-	"encoding/binary"
+	"path/filepath"
 )
 
 //EsriTileCache implements TileCache for ESRI local files
 type EsriTileCache struct {
-	CacheFormat string
+	CacheFormat   string
 	BaseDirectory string
-	FileFormat string
+	FileFormat    string
 	TileCache
 }
 
@@ -28,7 +28,7 @@ type CacheInfo struct {
 			}
 		}
 		SpatialReference struct {
-			WKID string
+			WKID int
 		}
 		TileCols int
 		TileRows int
@@ -36,131 +36,128 @@ type CacheInfo struct {
 	TileImageInfo struct {
 		CacheTileFormat string
 	}
-	CacheStorageInfo struct{
+	CacheStorageInfo struct {
 		StorageFormat string
-		PacketSize *int
+		PacketSize    *int
 	}
 }
 
 //New returns a new EsriTileCache
-func New(string basePath) (*EsriTileCache, error) {
-	e := &EsriTileCache{}
-	bytes, err := ioutil.ReadAll(xmlFile)
-	if err != nil{
-		return er
+func New(confPath string) (*EsriTileCache, error) {
+	tc := &EsriTileCache{}
+	confXML, err := ioutil.ReadFile(confPath)
+	if err != nil {
+		return nil, err
 	}
 	var cache CacheInfo
-	err = xml.Unmarshal(bytes, &cache)
-	if err != nil{
-		return er
+	err = xml.Unmarshal(confXML, &cache)
+	if err != nil {
+		return nil, err
 	}
 	levelIds := make([]int, len(cache.TileCacheInfo.LODInfos))
-	e.MinLevel = cache.TileCacheInfo.LODInfos[0]	
-	e.MaxLevel = MinLevel
-	for i, li := range(cache.TileCacheInfo.LODInfos){
+	tc.MinLevel = cache.TileCacheInfo.LODInfos[0].LODInfo.LevelID
+	tc.MaxLevel = tc.MinLevel
+	for i, li := range cache.TileCacheInfo.LODInfos {
 		levelIds[i] = li.LODInfo.LevelID
-		e.MaxLevel = li.LODInfo.LevelID
+		tc.MaxLevel = li.LODInfo.LevelID
 	}
-	e.FileFormat = cache.TileImageInfo.CacheTileFormat
-	e.BaseDirectory = Path.GetDirectoryName(basePath)
-	e.CacheFormat = cache.CacheStorageInfo.StorageFormat
+	tc.FileFormat = cache.TileImageInfo.CacheTileFormat
+	tc.BaseDirectory = filepath.Dir(confPath)
+	tc.CacheFormat = cache.CacheStorageInfo.StorageFormat
 	packetSize := cache.CacheStorageInfo.PacketSize
-	e.HasTransparency = (FileFormat == "PNG" || FileFormat == "PNG32" || FileFormat == "MIXED")
-	e.EpsgCode = cache.TileCacheInfo.SpatialReference.WKID
-	e.TileColumnSize = cache.TileCacheInfo.TileCols
-	e.TileRowSize = cache.TileCacheInfo.TileRows
-	e.ColsPerFile = 1
-	e.RowsPerFile = 1
-	if packetSize != nil{
-		e.ColsPerFile, e.RowsPerFile = packetSize, packetSize
+	tc.HasTransparency = (tc.FileFormat == "PNG" || tc.FileFormat == "PNG32" || tc.FileFormat == "MIXED")
+	tc.EpsgCode = cache.TileCacheInfo.SpatialReference.WKID
+	tc.TileColumnSize = cache.TileCacheInfo.TileCols
+	tc.TileRowSize = cache.TileCacheInfo.TileRows
+	if packetSize != nil {
+		tc.ColsPerFile, tc.RowsPerFile = *packetSize, *packetSize
+	} else {
+		tc.ColsPerFile, tc.RowsPerFile = 1, 1
+	}
+	return tc, nil
+}
+
+//ReadTile returns a 256x256 tile
+func (tc *EsriTileCache) ReadTile(tile Tile) ([]byte, error) {
+	if tc.CacheFormat == "esriMapCacheStorageModeCompact" {
+		return tc.ReadCompactTile(tile)
+	}
+	return tc.ReadExplodedTile(tile)
+}
+
+//WriteTile writes a 256x256 tile
+func (tc *EsriTileCache) WriteTile(tile Tile, tileData []byte) error {
+	if tc.CacheFormat == "esriMapCacheStorageModeCompact" {
+		return tc.WriteCompactTile(tile, tileData)
+	} else {
+		return tc.WriteExplodedTile(tile, tileData)
 	}
 }
 
-func (etci *EsriTileCache) ReadTile(tile Tile, bool ignore512) []byte {
-	//mandatory file size check
-	if (!ignore512 && TileRowSize == 512 && TileColumnSize == 512){
-		return ReadTile512(tile)
+//ReadCompactTile returns a bundled 256x256 tile
+func (tc *EsriTileCache) ReadCompactTile(tile Tile) ([]byte, error) {
+	bundlxPath, bundlePath, imgDataIndex := tc.GetFileInfo(tile)
+	bundlx, err := os.Open(bundlxPath)
+	if err != nil {
+		return nil, err
 	}
-
-	if (CacheFormat == "esriMapCacheStorageModeCompact"){
-		return ReadCompactTile(tile)
+	defer bundlx.Close()
+	bundlx.Seek((16 + (5 * imgDataIndex)), io.SeekStart)
+	bOffset := make([]byte, 5, 5)
+	bundlx.Read(bOffset)
+	offset := int64(binary.LittleEndian.Uint64(bOffset))
+	bundle, err := os.Open(bundlePath)
+	if err != nil {
+		return nil, err
 	}
-	return ReadExplodedTile(tile)
+	defer bundle.Close()
+	bundle.Seek(offset, io.SeekStart)
+	bLength := make([]byte, 4, 4)
+	bundle.Read(bLength)
+	length := binary.LittleEndian.Uint64(bLength)
+	imgBytes := make([]byte, length, length)
+	bundle.Read(imgBytes)
+	return imgBytes, nil
 }
 
-func (etci *EsriTileCache) WriteTile(tile Tile, tileData []byte, ignore512 bool) {
-	//mandatory file size check
-	if (!ignore512 && TileRowSize == 512 && TileColumnSize == 512) {
-		WriteTile512(tile, tileData)
-		return
-	}
-	if (CacheFormat == "esriMapCacheStorageModeCompact"){
-		WriteCompactTile(tile, tileData)
-	}else{
-		WriteExplodedTile(tile, tileData)
-	}
+//WriteCompactTile writes a bundled 256x256 tile
+func (tc *EsriTileCache) WriteCompactTile(tile Tile, tileData []byte) error {
+	return fmt.Errorf("not implemented")
 }
 
-func (etci *EsriTileCache) ReadCompactTile(tile Tile) []byte {
-	bundlxPath, bundlePath, imgDataIndex := GetFileInfo(tile)
-	if (!File.Exists(bundlxPath)){
-		return nil
-	}
-	using (FileStream bundlx = new FileStream(bundlxPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-	{
-		bundlx.Seek((16 + (5 * imgDataIndex)), SeekOrigin.Begin)
-		var buffer [8]byte
-		bundlx.Read(buffer, 0, 5)
-		imageStartIndex = BitConverter.ToInt64(buffer, 0)
-		using (FileStream bundle = new FileStream(bundlePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-		{
-			bundle.Seek(imageStartIndex, SeekOrigin.Begin)
-			var imgLength [4]byte
-			bundle.Read(imgLength, 0, 4)
-			count = BitConverter.ToInt32(imgLength, 0)
-			imgBytes := make([]byte, count, count)
-			bundle.Read(imgBytes, 0, count)
-			return imgBytes
-		}
-	}
-}
-
-func (etci *EsriTileCache) WriteCompactTile(tile Tile, tileData []byte){
-	//int imgDataIndex
-	//string bundlePath, bundlxPath
-	//GetFileInfo(tile, out bundlxPath, out bundlePath, out imgDataIndex)
-}
-
-func (etci *EsriTileCache) GetFileInfo(tile Tile) (bundlxPath, bundlePath, imgDataIndex string){
-	internalRow = tile.Row % RowsPerFile
-	internalCol = tile.Column % ColsPerFile
-	bundleRow = tile.Row - internalRow
-	bundleCol = tile.Column - internalCol
-	bundleBasePath = path.Join(BaseDirectory, "_alllayers", fmt.Sprintf("L{0:d2}", tile.Level), fmt.Sprintf("R{0:x4}C{1:x4}", bundleRow, bundleCol))
+//GetFileInfo returns file paths and indexes into those files
+func (tc *EsriTileCache) GetFileInfo(tile Tile) (bundlxPath, bundlePath string, imgDataIndex int64) {
+	internalRow := tile.Row % tc.RowsPerFile
+	internalCol := tile.Column % tc.ColsPerFile
+	bundleRow := tile.Row - internalRow
+	bundleCol := tile.Column - internalCol
+	bundleBasePath := path.Join(tc.BaseDirectory, "_alllayers", fmt.Sprintf("L{0:d2}", tile.Level), fmt.Sprintf("R{0:x4}C{1:x4}", bundleRow, bundleCol))
 	bundlxPath = bundleBasePath + ".bundlx"
 	bundlePath = bundleBasePath + ".bundle"
-	imgDataIndex = (ColsPerFile * internalCol) + internalRow
+	imgDataIndex = int64((tc.ColsPerFile * internalCol) + internalRow)
 	return bundlxPath, bundlePath, imgDataIndex
 }
- 
-func (etci *EsriTileCache) ReadExplodedTile(tile Tile) []byte {
-	return binary.Read(GetFilePath(tile))
+
+//ReadExplodedTile returns a standalone 256x256 tile
+func (tc *EsriTileCache) ReadExplodedTile(tile Tile) ([]byte, error) {
+	return ioutil.ReadFile(tc.GetFilePath(tile))
 }
 
-func (etci *EsriTileCache) WriteExplodedTile(tile Tile, tileData []byte){
-	binary.Write(GetFilePath(tile), tileData)
+//WriteExplodedTile writes a standalone 256x256 tile
+func (tc *EsriTileCache) WriteExplodedTile(tile Tile, tileData []byte) error {
+	return ioutil.WriteFile(tc.GetFilePath(tile), tileData, 0644)
 }
 
 //GetFilePath return the primary file path, sans extension
-func (etci *EsriTileCache) GetFilePath(tile Tile) string {
+func (tc *EsriTileCache) GetFilePath(tile Tile) string {
 	level := fmt.Sprintf("L{0:d2}", tile.Level)
 	row := fmt.Sprintf("R{0:x8}", tile.Row)
 	column := fmt.Sprintf("C{0:x8}", tile.Column)
-	filePath := path.Join(BaseDirectory, level, row, column)
-	if (FileFormat == "JPEG"){
+	filePath := path.Join(tc.BaseDirectory, level, row, column)
+	if tc.FileFormat == "JPEG" {
 		return filePath + ".jpg" //JPEG
 	}
-	if (FileFormat != "MIXED"){
+	if tc.FileFormat != "MIXED" {
 		return filePath + ".png" //PNG, PNG8, PNG24, PNG32
 	}
 	if _, err := os.Stat(filePath + ".jpg"); err == nil {
