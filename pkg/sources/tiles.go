@@ -1,4 +1,4 @@
-package main
+package sources
 
 type Tile struct {
 	Row, Level, Column, EpsgCode int
