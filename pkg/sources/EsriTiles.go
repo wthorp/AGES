@@ -131,7 +131,7 @@ func (tc *EsriTileCache) GetFileInfo(tile Tile) (bundlxPath, bundlePath string, 
 	internalCol := tile.Column % tc.ColsPerFile
 	bundleRow := tile.Row - internalRow
 	bundleCol := tile.Column - internalCol
-	bundleBasePath := path.Join(tc.BaseDirectory, "_alllayers", fmt.Sprintf("L{0:d2}", tile.Level), fmt.Sprintf("R{0:x4}C{1:x4}", bundleRow, bundleCol))
+	bundleBasePath := path.Join(tc.BaseDirectory, "_alllayers", fmt.Sprintf("L%02d", tile.Level), fmt.Sprintf("R%04xC%04x", bundleRow, bundleCol))
 	bundlxPath = bundleBasePath + ".bundlx"
 	bundlePath = bundleBasePath + ".bundle"
 	imgDataIndex = int64((tc.ColsPerFile * internalCol) + internalRow)
@@ -150,9 +150,9 @@ func (tc *EsriTileCache) WriteExplodedTile(tile Tile, tileData []byte) error {
 
 //GetFilePath return the primary file path, sans extension
 func (tc *EsriTileCache) GetFilePath(tile Tile) string {
-	level := fmt.Sprintf("L{0:d2}", tile.Level)
-	row := fmt.Sprintf("R{0:x8}", tile.Row)
-	column := fmt.Sprintf("C{0:x8}", tile.Column)
+	level := fmt.Sprintf("L%02d", tile.Level)
+	row := fmt.Sprintf("R%08x", tile.Row)
+	column := fmt.Sprintf("C%08x", tile.Column)
 	filePath := path.Join(tc.BaseDirectory, level, row, column)
 	if tc.FileFormat == "JPEG" {
 		return filePath + ".jpg" //JPEG
