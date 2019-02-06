@@ -22,8 +22,8 @@ type EsriTileCache struct {
 //CacheInfo corresponds to an ESRI conf.xml document
 type CacheInfo struct {
 	TileCacheInfo struct {
-		LODInfos []struct {
-			LODInfo struct {
+		LODInfos struct {
+			LODInfo []struct {
 				LevelID int
 			}
 		}
@@ -42,8 +42,8 @@ type CacheInfo struct {
 	}
 }
 
-//New returns a new EsriTileCache
-func New(confPath string) (*EsriTileCache, error) {
+//NewEsriTileCache returns a new EsriTileCache, based on a conf.xml path
+func NewEsriTileCache(confPath string) (*EsriTileCache, error) {
 	tc := &EsriTileCache{}
 	confXML, err := ioutil.ReadFile(confPath)
 	if err != nil {
@@ -54,15 +54,9 @@ func New(confPath string) (*EsriTileCache, error) {
 	if err != nil {
 		return nil, err
 	}
-	levelIds := make([]int, len(cache.TileCacheInfo.LODInfos))
-	tc.MinLevel = cache.TileCacheInfo.LODInfos[0].LODInfo.LevelID
-	tc.MaxLevel = tc.MinLevel
-	for i, li := range cache.TileCacheInfo.LODInfos {
-		levelIds[i] = li.LODInfo.LevelID
-		tc.MaxLevel = li.LODInfo.LevelID
-	}
-	tc.FileFormat = cache.TileImageInfo.CacheTileFormat
 	tc.BaseDirectory = filepath.Dir(confPath)
+	tc.MinLevel, tc.MaxLevel = calcMinMaxLevels(&cache, tc.BaseDirectory)
+	tc.FileFormat = cache.TileImageInfo.CacheTileFormat
 	tc.CacheFormat = cache.CacheStorageInfo.StorageFormat
 	packetSize := cache.CacheStorageInfo.PacketSize
 	tc.HasTransparency = (tc.FileFormat == "PNG" || tc.FileFormat == "PNG32" || tc.FileFormat == "MIXED")
@@ -75,6 +69,28 @@ func New(confPath string) (*EsriTileCache, error) {
 		tc.ColsPerFile, tc.RowsPerFile = 1, 1
 	}
 	return tc, nil
+}
+
+//calcMinMaxLevels is called by NewEsriTileCache to return min and max levels
+func calcMinMaxLevels(cache *CacheInfo, baseDir string) (int, int) {
+	minLevel := int(^uint(0) >> 1)
+	maxLevel := 0
+	for _, li := range cache.TileCacheInfo.LODInfos.LODInfo {
+		levelPath := path.Join(baseDir, "_alllayers", fmt.Sprintf("L%02d", li.LevelID))
+		if _, err := os.Stat(levelPath); err != nil {
+			continue
+		}
+		if li.LevelID > maxLevel {
+			maxLevel = li.LevelID
+		}
+		if li.LevelID < minLevel {
+			minLevel = li.LevelID
+		}
+	}
+	if minLevel > maxLevel {
+		minLevel = maxLevel
+	}
+	return minLevel, maxLevel
 }
 
 //ReadTile returns a 256x256 tile
