@@ -2,8 +2,12 @@ package gee
 
 import (
 	"AGES/pkg/gee/keyhole"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,8 +16,23 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-//f1Handler returns a dbRoot object
-func f1Handler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
+//f1Handler returns an image
+func f1Handler(w http.ResponseWriter, r *http.Request, quadkey string, imgSource func(int, int, int) ([]byte, error)) {
+	jpgType := keyhole.EarthImageryPacket_JPEG
+	imageBytes, err := imgSource(QuadKeyToTileXY(quadkey))
+	eip := &keyhole.EarthImageryPacket{ImageType: &jpgType, ImageData: imageBytes}
+	eipBytes, err := proto.Marshal(eip) //convert to protobuf
+	if err != nil {
+		fmt.Fprintf(w, "eip proto\n%+v\n%v", eip, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	XOR(eipBytes, []byte(defaultKey), false) //encode raw
+	w.Write(eipBytes)                        //send bytes
+}
+
+//oldF1Handler returns a dbRoot object
+func oldF1Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	rawPath := filepath.Join("config", r.URL.RawQuery)
 	jsonPath := filepath.Join("config", r.URL.RawQuery+".json")
 
@@ -58,6 +77,43 @@ func f1Handler(w http.ResponseWriter, r *http.Request, quadkey string, version s
 	eipBytes, err := proto.Marshal(eip)
 	if err != nil {
 		fmt.Fprintf(w, "eip proto\n%+v\n%v", eip, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	//encode raw
+	XOR(eipBytes, []byte(defaultKey), false)
+	//send bytes
+	w.Write(eipBytes)
+}
+
+func WriteJpegRaw(w http.ResponseWriter, img image.Image) {
+	buf := new(bytes.Buffer)
+	err := png.Encode(buf, img)
+	if err != nil {
+		fmt.Println("bad jpg")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(buf.Bytes())
+}
+
+func WriteJpeg(w http.ResponseWriter, img image.Image) {
+	jpgType := keyhole.EarthImageryPacket_JPEG
+	o := &jpeg.Options{Quality: 85}
+	buf := new(bytes.Buffer)
+	err := jpeg.Encode(buf, img, o)
+	if err != nil {
+		fmt.Println("bad jpg")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	imgBytes := buf.Bytes()
+	eip := &keyhole.EarthImageryPacket{ImageType: &jpgType, ImageData: imgBytes}
+	//convert to protobuf
+	eipBytes, err := proto.Marshal(eip)
+	if err != nil {
+		fmt.Printf("bad jpg proto\n%+v\n%v", eip, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

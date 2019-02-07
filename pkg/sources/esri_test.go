@@ -11,8 +11,8 @@ const layersDir1 = `C:\Users\Bill\Desktop\EsriTileCache\Layers`
 const layersDir2 = `C:\Users\Bill\AppData\Local\ESRI\Local Caches\MapCacheV1\L9C4C\L9C4D`
 const layersDir3 = `C:\Users\Bill\AppData\Local\ESRI\Local Caches\MapCacheV1\LCC8D\LCC8E`
 
-//TestNew returns a new EsriTileCache
-func TestNew1(t *testing.T) {
+//TestNewEsriTileCache tests the EsriTileCache constructor
+func TestNewEsriTileCache(t *testing.T) {
 	testProperties(t, layersDir1, 512, 4326, 0, 9)
 	testProperties(t, layersDir2, 256, 102100, 1, 18)
 	testProperties(t, layersDir3, 256, 102100, 2, 2)

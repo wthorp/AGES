@@ -10,7 +10,7 @@ import (
 )
 
 //q2Handler returns a q2 metadata object
-func q2Handler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
+func q2Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	rawPath := filepath.Join("config", r.URL.RawQuery)
 	jsonPath := filepath.Join("config", r.URL.RawQuery+".json")
 

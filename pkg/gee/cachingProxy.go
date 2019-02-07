@@ -14,12 +14,12 @@ import (
 //CachingProxy proxies files
 type CachingProxy struct {
 	URL        string
-	ImgHandler func(w http.ResponseWriter, r *http.Request, quadkey string, version string)
+	ImgHandler func(int, int, int) ([]byte, error)
 }
 
 func (p *CachingProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
-	quadkey, version := parts[1], parts[3]
+	quadkey, _ /*version */ := parts[1], parts[3]
 	filePath := filepath.Join("config", r.URL.RawQuery)
 	url := fmt.Sprintf("%s/flatfile?%s-%s-%s.%s", p.URL, parts[0], parts[1], parts[2], parts[3])
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -27,11 +27,11 @@ func (p *CachingProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	switch parts[0] {
 	case "q2": //-q
-		q2Handler(w, r, quadkey, version)
+		q2Handler(w, r, quadkey)
 	case "f1": //-i
-		p.ImgHandler(w, r, quadkey, version)
+		f1Handler(w, r, quadkey, p.ImgHandler)
 	case "f1c": //-t
-		f1cHandler(w, r, quadkey, version)
+		f1cHandler(w, r, quadkey)
 	default:
 		//Other examples:
 		//flatfile?lf-0-icons/shield1_l.png&h=32
@@ -41,7 +41,7 @@ func (p *CachingProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 //f1cHandler returns a dbRoot object
-func f1cHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
+func f1cHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	filePath := filepath.Join("config", r.URL.RawQuery)
 	file, e := ioutil.ReadFile(filePath)
 	if e != nil {
