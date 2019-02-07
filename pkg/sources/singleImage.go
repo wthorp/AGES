@@ -4,17 +4,18 @@ import (
 	"io/ioutil"
 )
 
+//SingleImage is a single image 'cache'
 type SingleImage struct {
 	imageBytes []byte
 }
 
 //NewSingleImage return a single image for all tile requests
-func NewSingleImage(imgPath string) (SingleImage, error) {
+func NewSingleImage(imgPath string) (*SingleImage, error) {
 	imageBytes, err := ioutil.ReadFile(imgPath)
 	if err != nil {
 		return err
 	}
-	return SingleImage{imageBytes: imageBytes}
+	return &SingleImage{imageBytes: imageBytes}
 }
 
 //Pipe returns Magritte's pipe image

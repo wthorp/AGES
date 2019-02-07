@@ -8,20 +8,20 @@ import (
 
 //ESRIProxy gets images from a WGS84 ESRI REST endpoint
 type ESRIProxy struct {
-	URL     url.URL
+	URL     *url.URL
 	Timeout time.Duration
 }
 
 //NewESRIProxy return an ESRI REST proxy
-func NewESRIProxy(url string, timeout time.Duration) (EsriProxy, error) {
-	url, err := url.Parse(BaseURL)
+func NewESRIProxy(baseURL string, timeout time.Duration) (*ESRIProxy, error) {
+	base, err := url.Parse(baseURL)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return EsriProxy{URL: url, Timeout: timeout}
+	return &ESRIProxy{URL: base, Timeout: timeout}, nil
 }
 
-func (p *EsriProxy) GetTile(x, y, z int) ([]byte, error) {
+func (p *ESRIProxy) GetTile(x, y, z int) ([]byte, error) {
 	//todo
 	return nil, fmt.Errorf("not implemented")
 }

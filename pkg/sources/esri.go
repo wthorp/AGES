@@ -1,6 +1,7 @@
 package sources
 
 import (
+	"AGES/pkg/core"
 	"encoding/binary"
 	"encoding/xml"
 	"fmt"
@@ -16,7 +17,7 @@ type EsriTileCache struct {
 	CacheFormat   string
 	BaseDirectory string
 	FileFormat    string
-	TileCache
+	core.TileCache
 }
 
 //CacheInfo corresponds to an ESRI conf.xml document
@@ -94,7 +95,7 @@ func calcMinMaxLevels(cache *CacheInfo, baseDir string) (int, int) {
 }
 
 //ReadTile returns a 256x256 tile
-func (tc *EsriTileCache) ReadTile(tile Tile) ([]byte, error) {
+func (tc *EsriTileCache) ReadTile(tile core.Tile) ([]byte, error) {
 	if tc.CacheFormat == "esriMapCacheStorageModeCompact" {
 		return tc.ReadCompactTile(tile)
 	}
@@ -102,7 +103,7 @@ func (tc *EsriTileCache) ReadTile(tile Tile) ([]byte, error) {
 }
 
 //WriteTile writes a 256x256 tile
-func (tc *EsriTileCache) WriteTile(tile Tile, tileData []byte) error {
+func (tc *EsriTileCache) WriteTile(tile core.Tile, tileData []byte) error {
 	if tc.CacheFormat == "esriMapCacheStorageModeCompact" {
 		return tc.WriteCompactTile(tile, tileData)
 	} else {
@@ -111,7 +112,7 @@ func (tc *EsriTileCache) WriteTile(tile Tile, tileData []byte) error {
 }
 
 //ReadCompactTile returns a bundled 256x256 tile
-func (tc *EsriTileCache) ReadCompactTile(tile Tile) ([]byte, error) {
+func (tc *EsriTileCache) ReadCompactTile(tile core.Tile) ([]byte, error) {
 	bundlxPath, bundlePath, imgDataIndex := tc.GetFileInfo(tile)
 	bundlx, err := os.Open(bundlxPath)
 	if err != nil {
@@ -137,12 +138,12 @@ func (tc *EsriTileCache) ReadCompactTile(tile Tile) ([]byte, error) {
 }
 
 //WriteCompactTile writes a bundled 256x256 tile
-func (tc *EsriTileCache) WriteCompactTile(tile Tile, tileData []byte) error {
+func (tc *EsriTileCache) WriteCompactTile(tile core.Tile, tileData []byte) error {
 	return fmt.Errorf("not implemented")
 }
 
 //GetFileInfo returns file paths and indexes into those files
-func (tc *EsriTileCache) GetFileInfo(tile Tile) (bundlxPath, bundlePath string, imgDataIndex int64) {
+func (tc *EsriTileCache) GetFileInfo(tile core.Tile) (bundlxPath, bundlePath string, imgDataIndex int64) {
 	internalRow := tile.Row % tc.RowsPerFile
 	internalCol := tile.Column % tc.ColsPerFile
 	bundleRow := tile.Row - internalRow
@@ -155,17 +156,17 @@ func (tc *EsriTileCache) GetFileInfo(tile Tile) (bundlxPath, bundlePath string, 
 }
 
 //ReadExplodedTile returns a standalone 256x256 tile
-func (tc *EsriTileCache) ReadExplodedTile(tile Tile) ([]byte, error) {
+func (tc *EsriTileCache) ReadExplodedTile(tile core.Tile) ([]byte, error) {
 	return ioutil.ReadFile(tc.GetFilePath(tile))
 }
 
 //WriteExplodedTile writes a standalone 256x256 tile
-func (tc *EsriTileCache) WriteExplodedTile(tile Tile, tileData []byte) error {
+func (tc *EsriTileCache) WriteExplodedTile(tile core.Tile, tileData []byte) error {
 	return ioutil.WriteFile(tc.GetFilePath(tile), tileData, 0644)
 }
 
 //GetFilePath return the primary file path, sans extension
-func (tc *EsriTileCache) GetFilePath(tile Tile) string {
+func (tc *EsriTileCache) GetFilePath(tile core.Tile) string {
 	level := fmt.Sprintf("L%02d", tile.Level)
 	row := fmt.Sprintf("R%08x", tile.Row)
 	column := fmt.Sprintf("C%08x", tile.Column)

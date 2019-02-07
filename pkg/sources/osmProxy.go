@@ -9,21 +9,22 @@ import (
 	"time"
 )
 
+//OSMProxy is an Open Street Map proxy
 type OSMProxy struct {
-	URL     url.URL
+	URL     *url.URL
 	Timeout time.Duration
 }
 
 //NewOSMProxy return a Open Street Map proxy
-func NewOSMProxy(url string, timeout time.Duration) (OSMProxy, error) {
-	url, err := url.Parse(w.BaseURL) // https://a.tile.openstreetmap.org
+func NewOSMProxy(baseURL string, timeout time.Duration) (*OSMProxy, error) {
+	base, err := url.Parse(baseURL) // https://a.tile.openstreetmap.org
 	if err != nil {
 		return nil, err
 	}
-	return OSMProxy{URL: url, Timeout: timeout}, nil
+	return &OSMProxy{URL: base, Timeout: timeout}, nil
 }
 
-//OSM returns OpenStreetMap imagery
+//GetTile returns OpenStreetMap imagery
 func (p *OSMProxy) GetTile(x, y, z int) ([]byte, error) {
 	url := fmt.Sprintf("%s/%d/%d/%d.png", p.URL, z, x, y-1)
 	var client http.Client

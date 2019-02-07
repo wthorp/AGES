@@ -1,40 +1,53 @@
 package sources
 
 import (
+	"AGES/pkg/gee"
 	"AGES/pkg/gee/keyhole"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 )
 
-type GEEProxy struct{}
+type GEEProxy struct {
+	URL     *url.URL
+	Timeout time.Duration
+}
+
+//NewGEEProxy return an GEE proxy
+func NewGEEProxy(baseURL string, timeout time.Duration) (*GEEProxy, error) {
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	return &GEEProxy{URL: base, Timeout: timeout}, nil
+}
 
 //f1Handler returns a dbRoot object
 func (g *GEEProxy) GetTile(x, y, z int) ([]byte, error) {
-	quadkey := TileXYToQuadKey(x, y, z)
-	rawPath := filepath.Join("config", r.URL.RawQuery)
-	jsonPath := filepath.Join("config", r.URL.RawQuery+".json")
+	quadkey := gee.TileXYToQuadKey(x, y, z)
+	rawPath := filepath.Join("config", g.URL.RawQuery)
+	jsonPath := filepath.Join("config", g.URL.RawQuery+".json")
 
 	//url := path.Join(proxiedURL, "flatfile?"+r.URL.RawQuery)
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
 		//load raw
 		file, e := ioutil.ReadFile(rawPath)
 		if e != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Printf("File error: %v\n", e)
-			return
+			return nil, e
 		}
 		//decode raw
-		XOR(file, []byte(defaultKey), true)
+		gee.XOR(file, []byte(gee.defaultKey), true)
 		eip := keyhole.EarthImageryPacket{}
-		unProto(file, &eip)
+		gee.unProto(file, &eip)
 		//write image
-		imgPath := filepath.Join("config", r.URL.RawQuery+"."+eip.ImageType.String())
+		imgPath := filepath.Join("config", g.URL.RawQuery+"."+eip.ImageType.String())
 		writeFile(imgPath, eip.ImageData)
 		//write JSON
 		eip.ImageData = eip.ImageData[0:0]
@@ -47,9 +60,9 @@ func (g *GEEProxy) GetTile(x, y, z int) ([]byte, error) {
 
 	//get EarthImageryPacket json data
 	eip := &keyhole.EarthImageryPacket{}
-	unMarshalJSONFile(jsonPath, eip)
+	gee.unMarshalJSONFile(jsonPath, eip)
 	//embed eip image payload in
-	imgPath := filepath.Join("config", r.URL.RawQuery+"."+eip.ImageType.String())
+	imgPath := filepath.Join("config", g.URL.RawQuery+"."+eip.ImageType.String())
 	imgBytes, e := ioutil.ReadFile(imgPath)
 	if e != nil {
 		w.WriteHeader(http.StatusInternalServerError)

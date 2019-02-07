@@ -15,7 +15,7 @@ func (f *Fractal) GetTile(x, y, z int) ([]byte, error) {
 	// splits out the URL to get the x,y,z coordinates
 	tileZ, tileX, tileY := float64(z), float64(x)-1, float64(y)-1
 
-	image := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{tileSize, tileSize}})
+	image := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{256, 256}})
 
 	i := complex128(complex(0, 1))
 	zoom := float64(math.Pow(2, float64(tileZ-2)))
@@ -25,12 +25,12 @@ func (f *Fractal) GetTile(x, y, z int) ([]byte, error) {
 
 	// This loop just fills the image tile with fractal data
 	var wg sync.WaitGroup
-	wg.Add(tileSize)
-	for cx := 0; cx < tileSize; cx++ {
+	wg.Add(256)
+	for cx := 0; cx < 256; cx++ {
 		go func(cx int) {
-			for cy := 0; cy < tileSize; cy++ {
-				x := -2 + tileStartX + (float64(cx)/tileSize)*tileRange
-				y := -2 + tileStartY + (float64(cy)/tileSize)*tileRange
+			for cy := 0; cy < 256; cy++ {
+				x := -2 + tileStartX + (float64(cx)/256)*tileRange
+				y := -2 + tileStartY + (float64(cy)/256)*tileRange
 
 				// x and y are now in the range ~-2 -> +2
 				z := complex128(complex(x, 0)) + complex128(complex(y, 0))*complex128(i)

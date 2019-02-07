@@ -15,12 +15,12 @@ type WMSProxy struct {
 }
 
 //NewWMSProxy return a WMS proxy
-func NewWMSProxy(url string, timeout time.Duration) (WMSProxy, error) {
-	url, err := url.Parse(w.BaseURL)
+func NewWMSProxy(baseURL string, timeout time.Duration) (*WMSProxy, error) {
+	base, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
 	}
-	return WMSProxy{URL: url, Timeout:timeout}, nil
+	return &WMSProxy{URL: base, Timeout: timeout}, nil
 }
 
 func (w *WMSProxy) GetTile(x, y, z int) ([]byte, error) {
@@ -30,7 +30,7 @@ func (w *WMSProxy) GetTile(x, y, z int) ([]byte, error) {
 	url.RawQuery = q.Encode()
 	var client = &http.Client{Timeout: w.Timeout}
 	resp, err := client.Get(url.String())
-	defer resp.Body.Close
+	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
