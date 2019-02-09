@@ -9,5 +9,5 @@ import (
 func TestNewFractal(t *testing.T) {
 	s, err := NewFractal()
 	require.NotNil(t, s)
-	require.Error(t, err)
+	require.NoError(t, err)
 }

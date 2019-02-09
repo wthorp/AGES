@@ -33,10 +33,10 @@ func (w *WMSProxy) GetTile(x, y, z int) ([]byte, error) {
 	w.URL.RawQuery = q.Encode()
 	var client = &http.Client{Timeout: w.Timeout}
 	resp, err := client.Get(w.URL.String())
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

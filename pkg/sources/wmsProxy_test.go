@@ -9,6 +9,6 @@ import (
 
 func TestNewWMSProxy(t *testing.T) {
 	s, err := NewWMSProxy("", 30*time.Second)
-	require.Nil(t, s)
-	require.Error(t, err)
+	require.NotNil(t, s)
+	require.NoError(t, err)
 }

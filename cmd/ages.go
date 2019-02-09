@@ -14,9 +14,13 @@ import (
 )
 
 func main() {
+	source, err := sources.NewSingleImage("pipe.jpg")
+	if err != nil {
+		log.Fatal("Imagery source:", err)
+	}
 	geeProxy := &gee.CachingProxy{
 		URL:        "http://www.earthenterprise.org/3d/",
-		ImgHandler: sources.NewSingleImage("pipe.jpg"),
+		ImgHandler: source.GetTile,
 	}
 	//create a url router to handle different endpoints
 	r := mux.NewRouter()
