@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"AGES/pkg/core"
 )
 
 //WMSProxy gets images from a WGS84 WMS
 type WMSProxy struct {
-	URL     url.URL
+	URL     *url.URL
 	Timeout time.Duration
 }
 
@@ -23,13 +25,14 @@ func NewWMSProxy(baseURL string, timeout time.Duration) (*WMSProxy, error) {
 	return &WMSProxy{URL: base, Timeout: timeout}, nil
 }
 
+//GetTile returns WMS imagery tiles
 func (w *WMSProxy) GetTile(x, y, z int) ([]byte, error) {
-	bbox := TileXYToBBox(x, y, z)
+	bbox := core.TileXYToBBox(x, y, z)
 	q := w.URL.Query()
 	q.Set("BBOX", fmt.Sprintf("%.9f,%.9f,%.9f,%.9f", bbox.Left, bbox.Bottom, bbox.Right, bbox.Top))
-	url.RawQuery = q.Encode()
+	w.URL.RawQuery = q.Encode()
 	var client = &http.Client{Timeout: w.Timeout}
-	resp, err := client.Get(url.String())
+	resp, err := client.Get(w.URL.String())
 	defer resp.Body.Close()
 	if err != nil {
 		return nil, err

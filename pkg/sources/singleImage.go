@@ -13,12 +13,12 @@ type SingleImage struct {
 func NewSingleImage(imgPath string) (*SingleImage, error) {
 	imageBytes, err := ioutil.ReadFile(imgPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return &SingleImage{imageBytes: imageBytes}
+	return &SingleImage{imageBytes: imageBytes}, nil
 }
 
-//Pipe returns Magritte's pipe image
+//GetTile returns the cached image
 func (s *SingleImage) GetTile(x, y, z int) ([]byte, error) {
-	return s.imageBytes
+	return s.imageBytes, nil
 }

@@ -21,6 +21,7 @@ func NewESRIProxy(baseURL string, timeout time.Duration) (*ESRIProxy, error) {
 	return &ESRIProxy{URL: base, Timeout: timeout}, nil
 }
 
+//GetTile returns an image tile
 func (p *ESRIProxy) GetTile(x, y, z int) ([]byte, error) {
 	//todo
 	return nil, fmt.Errorf("not implemented")

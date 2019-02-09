@@ -7,6 +7,7 @@ import (
 )
 
 func TestNewSingleImage(t *testing.T) {
-	s, err := SingleImage("")
+	s, err := NewSingleImage("")
+	require.Nil(t, s)
 	require.Error(t, err)
 }

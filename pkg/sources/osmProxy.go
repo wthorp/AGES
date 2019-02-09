@@ -1,12 +1,13 @@
 package sources
 
 import (
-	"AGES/pkg/gee"
 	"fmt"
 	"image/png"
 	"net/http"
 	"net/url"
 	"time"
+
+	"AGES/pkg/core"
 )
 
 //OSMProxy is an Open Street Map proxy
@@ -32,7 +33,7 @@ func (p *OSMProxy) GetTile(x, y, z int) ([]byte, error) {
 	req.Header.Add("User-Agent", "")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -44,5 +45,5 @@ func (p *OSMProxy) GetTile(x, y, z int) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return gee.WriteJpeg(w, img)
+	return core.JPEGBytes(img)
 }

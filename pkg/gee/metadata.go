@@ -15,6 +15,7 @@ const (
 	terrainBitmask   byte = 0x80
 )
 
+//QtPacket is a quadtree packet
 type QtPacket struct {
 	Header     QtHeader
 	Tiles      []TileInformation
@@ -22,6 +23,7 @@ type QtPacket struct {
 	MetaBuffer []byte
 }
 
+//QtHeader is a quadtree header packet
 type QtHeader struct {
 	MagicID          uint32
 	DataTypeID       uint32
@@ -33,6 +35,7 @@ type QtHeader struct {
 	MetaBufferSize   int32
 }
 
+//TileInformation describes a tile
 type TileInformation struct {
 	Bits            byte //junk uint8
 	CnodeVersion    uint16
@@ -46,21 +49,32 @@ type TileInformation struct {
 	TerrainProvider uint8 //junk uint16
 }
 
+//HasSubtree says if there are other tiles beneath it
 func (ti TileInformation) HasSubtree() bool {
 	return ti.Bits&cacheFlagBitmask != 0
 }
+
+//HasImagery says if theres raster imagery here
 func (ti TileInformation) HasImagery() bool {
 	return ti.Bits&imageBitmask != 0
 }
+
+//HasTerrain says if theres terrain data here
 func (ti TileInformation) HasTerrain() bool {
 	return ti.Bits&terrainBitmask != 0
 }
+
+//HasChildren says if there are other tiles beneath it
 func (ti TileInformation) HasChildren() bool {
 	return ti.Bits&anyChildBitmask != 0
 }
+
+//HasChild says if there is a specific tile beneath it
 func (ti TileInformation) HasChild(index uint) bool {
 	return ti.Bits&(1<<index) != 0
 }
+
+//GetChildBitmask get the bitmask to understand if there are tiles beneath
 func (ti TileInformation) GetChildBitmask() byte {
 	return ti.Bits & anyChildBitmask
 }
@@ -140,7 +154,7 @@ func processMetadata(buffer []byte, totalSize int, quadKey string) ([]TileInform
 	return instances, nil
 }
 
-//MarshalBinary returns QtHeader to a binary form
+//Validate checks a quadtree header for correctness
 func (qt *QtHeader) Validate() error {
 	if qt.MagicID != qtMagic {
 		return fmt.Errorf("invalid quadtree header magic")
@@ -162,6 +176,7 @@ func (qt *QtHeader) Validate() error {
 	return nil
 }
 
+//NewQtHeader returns a new quadtree header packet
 func NewQtHeader(numLevels int) QtHeader {
 	numInstances := int32(((1 << uint(numLevels*2)) - 1) / 3) //4^n-1/3
 	return QtHeader{
@@ -205,7 +220,7 @@ func (qt *QtHeader) UnmarshalBinary(data []byte) error {
 	return qt.Validate()
 }
 
-//MarshalBinary returns TileInformation from a binary form
+//UnmarshalBinary returns TileInformation from a binary form
 func (ti *TileInformation) UnmarshalBinary(data []byte) error {
 	dv := binary.LittleEndian
 	ti.Bits = data[0]

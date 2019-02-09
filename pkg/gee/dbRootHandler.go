@@ -1,12 +1,13 @@
 package gee
 
 import (
-	khdb "AGES/pkg/gee/keyhole_dbroot"
-	"AGES/pkg/net"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+
+	khdb "AGES/pkg/gee/keyhole_dbroot"
+	"AGES/pkg/net"
 
 	"github.com/golang/protobuf/proto"
 )

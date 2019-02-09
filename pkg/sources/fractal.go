@@ -1,16 +1,23 @@
 package sources
 
 import (
-	"AGES/pkg/gee"
 	"image"
 	"image/color"
 	"math"
 	"sync"
+
+	"AGES/pkg/core"
 )
 
+//Fractal returns fractal imagery
 type Fractal struct{}
 
-//Fractal returns fractal imagery
+//NewFractal return a fractal imagery for all tile requests
+func NewFractal() (*Fractal, error) {
+	return &Fractal{}, nil
+}
+
+//GetTile returns fractal imagery
 func (f *Fractal) GetTile(x, y, z int) ([]byte, error) {
 	// splits out the URL to get the x,y,z coordinates
 	tileZ, tileX, tileY := float64(z), float64(x)-1, float64(y)-1
@@ -52,5 +59,5 @@ func (f *Fractal) GetTile(x, y, z int) ([]byte, error) {
 		}(cx)
 	}
 	wg.Wait()
-	gee.WriteJpeg(w, image)
+	return core.JPEGBytes(image)
 }

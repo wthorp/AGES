@@ -1,0 +1,12 @@
+{
+    "go.formatTool": "goimports",
+    "go.formatFlags": [
+        "-local",
+        "AGES"
+    ],
+    "go.testFlags": [
+        "-count",
+        "1"
+    ],
+    "git.ignoreLimitWarning": true
+}

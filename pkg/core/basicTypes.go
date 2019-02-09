@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"math"
 )
 
 type Tile struct {
@@ -43,4 +44,15 @@ func JPEGBytes(img image.Image) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+//TileXYToBBox converts from x y z to bounding box
+func TileXYToBBox(x, y, z int) (bbox BBox) {
+	scale := 360.0 / (math.Pow(2.0, float64(z)))
+	return BBox{
+		Left:   -180.0 + (scale * float64(x)),
+		Bottom: -90.0 + (scale * float64(y)),
+		Right:  -180.0 + (scale * (float64(x) + 1)),
+		Top:    -90.0 + (scale * (float64(y) + 1)),
+	}
 }

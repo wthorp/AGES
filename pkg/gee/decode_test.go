@@ -1,12 +1,13 @@
 package gee
 
 import (
-	khdb "AGES/pkg/gee/keyhole_dbroot"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	khdb "AGES/pkg/gee/keyhole_dbroot"
 )
 
 func TestQ2(t *testing.T) {

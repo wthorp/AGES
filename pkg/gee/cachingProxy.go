@@ -1,7 +1,6 @@
 package gee
 
 import (
-	"AGES/pkg/net"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"AGES/pkg/net"
 )
 
 //CachingProxy proxies files

@@ -1,12 +1,14 @@
 package main
 
 import (
-	"AGES/pkg/gee"
 	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+
+	"AGES/pkg/gee"
+	"AGES/pkg/sources"
 
 	"github.com/gorilla/mux"
 )
@@ -14,7 +16,7 @@ import (
 func main() {
 	geeProxy := &gee.CachingProxy{
 		URL:        "http://www.earthenterprise.org/3d/",
-		ImgHandler: gee.PipeHandler,
+		ImgHandler: sources.NewSingleImage("pipe.jpg"),
 	}
 	//create a url router to handle different endpoints
 	r := mux.NewRouter()

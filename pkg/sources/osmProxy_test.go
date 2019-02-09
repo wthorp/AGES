@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewOSMProxy(t *testing.T) {
-	s, err := NewOSMProxy("", 30*time.Seconds)
+	s, err := NewOSMProxy("", 30*time.Second)
+	require.Nil(t, s)
 	require.Error(t, err)
 }

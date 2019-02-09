@@ -1,7 +1,6 @@
 package sources
 
 import (
-	"AGES/pkg/core"
 	"encoding/binary"
 	"encoding/xml"
 	"fmt"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	"AGES/pkg/core"
 )
 
 //EsriTileCache implements TileCache for ESRI local files
@@ -106,9 +107,8 @@ func (tc *EsriTileCache) ReadTile(tile core.Tile) ([]byte, error) {
 func (tc *EsriTileCache) WriteTile(tile core.Tile, tileData []byte) error {
 	if tc.CacheFormat == "esriMapCacheStorageModeCompact" {
 		return tc.WriteCompactTile(tile, tileData)
-	} else {
-		return tc.WriteExplodedTile(tile, tileData)
 	}
+	return tc.WriteExplodedTile(tile, tileData)
 }
 
 //ReadCompactTile returns a bundled 256x256 tile
