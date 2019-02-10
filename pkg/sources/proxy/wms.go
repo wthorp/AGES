@@ -24,5 +24,5 @@ func (p *WMS) GetTile(x, y, z int) ([]byte, error) {
 	//q := p.URL.Query()
 	//q.Set("BBOX", )
 	//p.URL.RawQuery = q.Encode()
-	return p.FetchAsJPEGBytes(p.URL + "?" + fmt.Sprintf("BBOX=%.9f,%.9f,%.9f,%.9f", bbox.Left, bbox.Bottom, bbox.Right, bbox.Top))
+	return p.FetchAsJPEGBytes(p.URL + fmt.Sprintf("&BBOX=%.9f,%.9f,%.9f,%.9f", bbox.Left, bbox.Bottom, bbox.Right, bbox.Top))
 }

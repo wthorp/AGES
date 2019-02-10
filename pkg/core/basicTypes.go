@@ -51,8 +51,8 @@ func TileXYToBBox(x, y, z int) (bbox BBox) {
 	scale := 360.0 / (math.Pow(2.0, float64(z)))
 	return BBox{
 		Left:   -180.0 + (scale * float64(x)),
-		Bottom: -90.0 + (scale * float64(y)),
+		Bottom: 180.0 - (scale * (float64(y) + 1)),
 		Right:  -180.0 + (scale * (float64(x) + 1)),
-		Top:    -90.0 + (scale * (float64(y) + 1)),
+		Top:    180.0 - (scale * (float64(y))),
 	}
 }

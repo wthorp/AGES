@@ -25,13 +25,22 @@ func f1Handler(w http.ResponseWriter, r *http.Request, quadkey string, imgSource
 	jpgType := keyhole.EarthImageryPacket_JPEG
 	imageBytes, err := imgSource(QuadKeyToTileXY(quadkey))
 	if err != nil {
-		fmt.Fprintf(w, "bad image source\n%v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		fmt.Printf("bad image source\n%v\n", err)
+		//fmt.Fprintf(w, "bad image source\n%v", err)
+		//w.WriteHeader(http.StatusInternalServerError)
+		//return
+		imageBytes, err = createTextImage(err.Error())
+		if err != nil {
+			fmt.Printf("createTextImage err\n%v\n", err)
+			fmt.Fprintf(w, "createTextImage err\n%v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 	eip := &keyhole.EarthImageryPacket{ImageType: &jpgType, ImageData: imageBytes}
 	eipBytes, err := proto.Marshal(eip) //convert to protobuf
 	if err != nil {
+		fmt.Printf("eip proto\n%+v\n%v", eip, err)
 		fmt.Fprintf(w, "eip proto\n%+v\n%v", eip, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -74,8 +83,8 @@ func oldF1Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 		//load raw
 		file, e := ioutil.ReadFile(rawPath)
 		if e != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Printf("File error: %v\n", e)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		//decode raw
