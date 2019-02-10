@@ -17,8 +17,7 @@ import (
 
 func main() {
 
-	//const wmsURL = "https://svs.gsfc.nasa.gov/cgi-bin/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=2915_21223&FORMAT=image/png&WIDTH=256&HEIGHT=256&CRS=CRS:84&STYLES="
-	//source, err := proxy.NewWMS(wmsURL, "PNG", time.Minute)
+	//"https: //gis.apfo.usda.gov/arcgis/rest/services/NAIP/USDA_CONUS_PRIME/ImageServer"
 
 	const wmsURL = "https://webgate.ec.europa.eu/estat/inspireec/gis/arcgis/services/Basemaps/Blue_marble_4326/MapServer/WMSServer?request=GetMap&service=WMS&VERSION=1.3&LAYERS=0&FORMAT=image/jpeg&WIDTH=256&HEIGHT=256&CRS=CRS:84&STYLES="
 	source, err := proxy.NewWMS(wmsURL, "JPEG", time.Minute)

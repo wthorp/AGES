@@ -18,66 +18,21 @@ func TileXYToQuadKey(x, y, z int) (quadkey string) {
 	return quadkey
 }
 
-//BingQuadKeyToTileXY converts from quadkey to x y z
-func BingQuadKeyToTileXY(quadkey string) (x, y, z int) {
-	z = len(quadkey)
-	for i := z; i > 0; i-- {
-		mask := 1 << (uint(i) - 1)
-		switch quadkey[z-i] {
-		case '0':
-		case '1':
-			x |= mask
-		case '2':
-			y |= mask
-		case '3':
-			x |= mask
-			y |= mask
-		default:
-			panic("bad quadkey")
-		}
-	}
-	return
-}
-
 //QuadKeyToTileXY converts from quadkey to x y z
+// https://github.com/google/earthenterprise/blob/950c525ce56aca2ee6624199339feafe47af113e/earth_enterprise/src/common/quadtreepath.cpp#L122
+// https://github.com/AnalyticalGraphicsInc/cesium/blob/5d00c8ea29d18748dd8871b77c10b184986774bc/Source/Core/GoogleEarthEnterpriseMetadata.js#L247
 func QuadKeyToTileXY(quadkey string) (x, y, z int) {
 	z = len(quadkey) - 1
-	//for i := z; i >= 0; --i {
-	for i := z; i >= 1; {
-		i = i - 1
+	for i := 0; i < z; i++ {
 		bitmask := 1 << uint(i)
-		digit := quadkey[z-i]
-
-		if digit&2 != 0 {
-			if digit&1 == 0 {
-				x |= bitmask
-			}
-		} else {
+		switch quadkey[z-i] {
+		case '0':
 			y |= bitmask
-			if digit&1 != 0 {
-				x |= bitmask
-			}
-		}
-	}
-	return
-}
-
-//OldQuadKeyToTileXY converts from quadkey to x y z
-func OldQuadKeyToTileXY(quadkey string) (x, y, z int) {
-	z = len(quadkey) - 1
-	for i := z; i >= 0; i-- {
-		bitmask := 1 << uint(i)
-		digit := '0' + quadkey[z-i]
-
-		if digit&2 != 0 {
-			if digit&1 == 0 {
-				x |= bitmask
-			}
-		} else {
+		case '1':
+			x |= bitmask
 			y |= bitmask
-			if digit&1 != 0 {
-				x |= bitmask
-			}
+		case '2':
+			x |= bitmask
 		}
 	}
 	return x, y, z
