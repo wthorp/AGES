@@ -32,13 +32,13 @@ func DBRootHandler(w http.ResponseWriter, r *http.Request) {
 		drp := khdb.DbRootProto{}
 		unProto(dbRoot, &drp)
 		//show the content
-		b, err := json.Marshal(drp)
+		b, err := json.MarshalIndent(drp, "", "  ")
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 		writeFile("config/dbRoot.js", b)
 		edrp.DbrootData = nil
-		e, err := json.Marshal(edrp)
+		e, err := json.MarshalIndent(edrp, "", "  ")
 		if err != nil {
 			fmt.Println("error:", err)
 		}

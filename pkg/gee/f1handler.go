@@ -20,8 +20,8 @@ import (
 	"AGES/pkg/gee/keyhole"
 )
 
-//f1Handler returns an image
-func f1Handler(w http.ResponseWriter, r *http.Request, quadkey string, imgSource func(int, int, int) ([]byte, error)) {
+//imageryHandler returns an image
+func imageryHandler(w http.ResponseWriter, r *http.Request, quadkey string, imgSource func(int, int, int) ([]byte, error)) {
 	jpgType := keyhole.EarthImageryPacket_JPEG
 	imageBytes, err := imgSource(QuadKeyToTileXY(quadkey))
 	if err != nil {
@@ -96,7 +96,7 @@ func oldF1Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 		writeFile(imgPath, eip.ImageData)
 		//write JSON
 		eip.ImageData = eip.ImageData[0:0]
-		b, err := json.Marshal(eip)
+		b, err := json.MarshalIndent(eip, "", "  ")
 		if err != nil {
 			fmt.Println("error:", err)
 		}

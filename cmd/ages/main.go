@@ -18,6 +18,7 @@ import (
 func main() {
 
 	//"https: //gis.apfo.usda.gov/arcgis/rest/services/NAIP/USDA_CONUS_PRIME/ImageServer"
+	//"http://nsdig2gapps.ncsi.gov.om/arcgis/rest/services/Base_Map_EN/MapServer"
 
 	const wmsURL = "https://webgate.ec.europa.eu/estat/inspireec/gis/arcgis/services/Basemaps/Blue_marble_4326/MapServer/WMSServer?request=GetMap&service=WMS&VERSION=1.3&LAYERS=0&FORMAT=image/jpeg&WIDTH=256&HEIGHT=256&CRS=CRS:84&STYLES="
 	source, err := proxy.NewWMS(wmsURL, "JPEG", time.Minute)
@@ -36,7 +37,7 @@ func main() {
 	}
 	//create a url router to handle different endpoints
 	r := mux.NewRouter()
-	r.HandleFunc("/dbRoot.v5", gee.DBRootHandler)
+	r.HandleFunc("/dbRoot.v5", gee.DBRootHandler2)
 	r.Handle("/flatfile", geeProxy)
 	// Anything we don't yet handle, use a simple reverse proxy
 	u, _ := url.Parse(geeProxy.URL)

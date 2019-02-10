@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 )
 
-//q2Handler returns a q2 metadata object
-func q2Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
+//metadataHandler returns a q2 metadata object
+func metadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	rawPath := filepath.Join("config", r.URL.RawQuery)
 	jsonPath := filepath.Join("config", r.URL.RawQuery+".json")
 
@@ -31,7 +31,7 @@ func q2Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 			fmt.Printf("Err in q2 metdata:\n%v\n", err)
 		} else {
 			//write JSON
-			b, err := json.Marshal(ti)
+			b, err := json.MarshalIndent(ti, "", "  ")
 			if err != nil {
 				fmt.Println("error:", err)
 			}
