@@ -105,7 +105,12 @@ func oldF1Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 
 	//get EarthImageryPacket json data
 	eip := &keyhole.EarthImageryPacket{}
-	unMarshalJSONFile(jsonPath, eip)
+	err := unMarshalJSONFile(jsonPath, eip)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Printf("File error: %v\n", err)
+		return
+	}
 	//embed eip image payload in
 	imgPath := filepath.Join("config", r.URL.RawQuery+"."+eip.ImageType.String())
 	imgBytes, e := ioutil.ReadFile(imgPath)

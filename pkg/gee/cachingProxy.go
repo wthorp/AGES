@@ -56,12 +56,10 @@ func terrainHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	w.Write(file)
 }
 
-func unMarshalJSONFile(filePath string, jsonObject interface{}) {
-	file, e := ioutil.ReadFile(filePath)
-	if e != nil {
-		fmt.Printf("File error: %v\n", e)
-		jsonObject = nil
-		return
+func unMarshalJSONFile(filePath string, jsonObject interface{}) error {
+	file, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
 	}
-	json.Unmarshal(file, jsonObject)
+	return json.Unmarshal(file, jsonObject)
 }

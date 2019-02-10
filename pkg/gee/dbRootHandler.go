@@ -47,8 +47,8 @@ func DBRootHandler(w http.ResponseWriter, r *http.Request) {
 
 	//get DbRoot json data
 	drp := &khdb.DbRootProto{}
-	unMarshalJSONFile("config/dbRoot.js", drp)
-	if drp == nil {
+	err := unMarshalJSONFile("config/dbRoot.js", drp)
+	if err != nil {
 		fmt.Fprintln(w, "drp json")
 		w.WriteHeader(http.StatusNotImplemented)
 		return
@@ -76,8 +76,8 @@ func DBRootHandler(w http.ResponseWriter, r *http.Request) {
 	XOR(cDrp, []byte(defaultKey), false)
 	//get EncryptedDbRoot json data
 	edrp2 := &khdb.EncryptedDbRootProto{}
-	unMarshalJSONFile("config/encDbRoot.js", edrp2)
-	if edrp2 == nil {
+	err = unMarshalJSONFile("config/encDbRoot.js", edrp2)
+	if err != nil {
 		fmt.Fprintln(w, "edrp json")
 		w.WriteHeader(http.StatusNotImplemented)
 		return

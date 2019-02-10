@@ -40,13 +40,21 @@ func metadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	}
 
 	//get  TileInformation map json data
-	ti := []TileInformation{}
-	unMarshalJSONFile(jsonPath, &ti)
-	if ti == nil {
+	qp := &QtPacket{}
+	err := unMarshalJSONFile(jsonPath, qp)
+	if err != nil {
 		fmt.Fprintln(w, "ti json")
 		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
+	mdBytes, err := unprocessMetadata(quadkey, qp)
+	if err != nil {
+		fmt.Fprintln(w, "unprocessMetadata")
+		w.WriteHeader(http.StatusNotImplemented)
+		return
+	}
+	file, err := compressPacket(mdBytes)
+	XOR(file, []byte(defaultKey), true)
 
 	//the old thing
 	filePath := filepath.Join("config", r.URL.RawQuery)

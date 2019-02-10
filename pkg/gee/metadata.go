@@ -1,6 +1,7 @@
 package gee
 
-//https://github.com/google/earthenterprise/blob/master/earth_enterprise/src/common/qtpacket/quadtreepacket.h
+// https://github.com/google/earthenterprise/blob/master/earth_enterprise/src/common/qtpacket/quadtreepacket.h
+// https://github.com/AnalyticalGraphicsInc/cesium/blob/master/Source/Core/GoogleEarthEnterpriseMetadata.js
 
 import (
 	"encoding/binary"
@@ -27,7 +28,7 @@ type QtPacket struct {
 type QtHeader struct {
 	MagicID          uint32
 	DataTypeID       uint32
-	Version          uint32
+	Version          uint32 //Version of the request for subtree metadata.
 	NumInstances     int32
 	DataInstanceSize int32
 	DataBufferOffset int32
@@ -79,22 +80,54 @@ func (ti TileInformation) GetChildBitmask() byte {
 	return ti.Bits & anyChildBitmask
 }
 
-func processMetadata(buffer []byte, totalSize int, quadKey string) ([]TileInformation, error) {
-	hdr := &QtHeader{}
-	err := hdr.UnmarshalBinary(buffer[0:32])
+func processMetadata(buffer []byte, totalSize int, quadKey string) (*QtPacket, error) {
+	qp := &QtPacket{}
+	err := qp.Header.UnmarshalBinary(buffer[0:32])
 	if err != nil {
 		return nil, err
 	}
 	// Verify the packets is all there header + instances + dataBuffer + metaBuffer
-	if hdr.DataBufferOffset+hdr.DataBufferSize+hdr.MetaBufferSize != int32(totalSize) {
+	if qp.Header.DataBufferOffset+qp.Header.DataBufferSize+qp.Header.MetaBufferSize != int32(totalSize) {
 		return nil, fmt.Errorf("invalid packet offsets")
 	}
 	// Read all the instances
-	instances := make([]TileInformation, hdr.NumInstances, hdr.NumInstances)
-	for i := int32(0); i < hdr.NumInstances; i++ {
-		instances[i].UnmarshalBinary(buffer[32*(i+1) : 32*(i+2)]) // i+1 because dataInstanceSize == sizeof(QtHeader) == 32
+	qp.Tiles = make([]TileInformation, qp.Header.NumInstances, qp.Header.NumInstances)
+	for i := int32(0); i < qp.Header.NumInstances; i++ {
+		qp.Tiles[i].UnmarshalBinary(buffer[32*(i+1) : 32*(i+2)]) // i+1 because dataInstanceSize == sizeof(QtHeader) == 32
 	}
+	//todo: care about
+	// DataBuffer []byte
+	// MetaBuffer []byte
+	return qp, nil
+}
 
+func unprocessMetadata(quadKey string, qp *QtPacket) ([]byte, error) {
+	bufferSize := (len(qp.Tiles) + 2) * 32 // +2 because dataInstanceSize == sizeof(QtHeader) == 32
+	buffer := make([]byte, bufferSize, bufferSize)
+	//header
+	err := qp.Header.UnmarshalBinary(buffer[0:32])
+	if err != nil {
+		return nil, err
+	}
+	// Read all the instances
+	qp.Tiles = make([]TileInformation, qp.Header.NumInstances, qp.Header.NumInstances)
+	for i := int32(0); i < qp.Header.NumInstances; i++ {
+		// i+1 because dataInstanceSize == sizeof(QtHeader) == 32
+		if err := qp.Tiles[i].UnmarshalBinary(buffer[32*(i+1) : 32*(i+2)]); err != nil {
+			return nil, err
+		}
+	}
+	//todo: care about
+	// DataBuffer []byte
+	// MetaBuffer []byte
+	qp.Header.DataBufferSize = 0
+	qp.Header.MetaBufferSize = 0
+	return buffer, nil
+}
+
+// the following comments block is only useful if we want to store TileInformation using quadkey as the index
+func makeMap() {
+	return
 	// tileInfo := map[string]TileInformation{}
 	// var index = int32(0)
 	// var level = 0
@@ -143,15 +176,42 @@ func processMetadata(buffer []byte, totalSize int, quadKey string) ([]TileInform
 	// 	}
 	// }
 	// populateTiles(quadKey, root, level)
+}
 
-	// //sanity check
-	// if len(instances) != len(tileInfo) {
-	// 	fmt.Printf("instances (%d) != ti (%d)\n", len(instances), len(tileInfo))
-	// }
+func serialize(quadkey string, ti []TileInformation) {
+	var instances []TileInformation
+	var index = int32(0)
+	var level = 0
+	if quadkey == "" {
+		level++ // Root tile has data at its root and one less level
+	} else {
+		instances[index] = ti[0] // This will only contain the child bitmask
+	}
 
-	//return tileInfo, nil
+	var packTiles func(parentKey string, parent TileInformation, level int)
+	packTiles = func(parentKey string, parent TileInformation, level int) {
+		isLeaf := false
+		if level == 4 {
+			if parent.HasSubtree() {
+				return // We have a subtree, so just return
+			}
+			isLeaf = true // No subtree, so set all children to null
+		}
+		for i := uint(0); i <= 4; i++ {
+			var childKey = fmt.Sprintf("%s%d", parentKey, i)
+			if isLeaf {
+			} else if level < 4 {
+				if !parent.HasChild(i) {
+					//tileInfo[childKey] = nil
+				} else {
 
-	return instances, nil
+					var instance = ti[childKey]
+					instances = append(instances, instance)
+					packTiles(childKey, instance, level+1)
+				}
+			}
+		}
+	}
 }
 
 //Validate checks a quadtree header for correctness
@@ -255,41 +315,4 @@ func (ti *TileInformation) MarshalBinary() ([]byte, error) {
 	data[28] = ti.ImageryProvider
 	data[29] = ti.TerrainProvider
 	return data, nil
-}
-
-func serialize(quadkey string, ti map[string]TileInformation) {
-	var instances []TileInformation
-	var index = int32(0)
-	var level = 0
-	index++
-	if quadkey == "" {
-		level++ // Root tile has data at its root and one less level
-	} else {
-		instances[index] = ti[quadkey] // This will only contain the child bitmask
-	}
-
-	var packTiles func(parentKey string, parent TileInformation, level int)
-	packTiles = func(parentKey string, parent TileInformation, level int) {
-		isLeaf := false
-		if level == 4 {
-			if parent.HasSubtree() {
-				return // We have a subtree, so just return
-			}
-			isLeaf = true // No subtree, so set all children to null
-		}
-		for i := uint(0); i <= 4; i++ {
-			var childKey = fmt.Sprintf("%s%d", parentKey, i)
-			if isLeaf {
-			} else if level < 4 {
-				if !parent.HasChild(i) {
-					//tileInfo[childKey] = nil
-				} else {
-
-					var instance = ti[childKey]
-					instances = append(instances, instance)
-					packTiles(childKey, instance, level+1)
-				}
-			}
-		}
-	}
 }
