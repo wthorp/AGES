@@ -246,15 +246,14 @@ func (qt *QtHeader) Validate() error {
 }
 
 //NewQtHeader returns a new quadtree header packet
-func NewQtHeader(numLevels int) QtHeader {
-	numInstances := int32(((1 << uint(numLevels*2)) - 1) / 3) //4^n-1/3
+func NewQtHeader(numInstances int) QtHeader {
 	return QtHeader{
 		MagicID:          32301,
 		DataTypeID:       1,
 		Version:          2,
-		NumInstances:     numInstances,
+		NumInstances:     int32(numInstances),
 		DataInstanceSize: 32,
-		DataBufferOffset: numInstances + 1*32,
+		DataBufferOffset: int32((numInstances + 1) * 32),
 		DataBufferSize:   0,
 		MetaBufferSize:   0,
 	}
