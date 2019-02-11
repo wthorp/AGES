@@ -64,14 +64,4 @@ func metadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	}
 	XOR(compressedBytes, []byte(defaultKey), false)
 	w.Write(compressedBytes)
-
-	//the old thing
-	// filePath := filepath.Join("config", r.URL.RawQuery)
-	// file, e := ioutil.ReadFile(filePath)
-	// if e != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	fmt.Printf("File error: %v\n", e)
-	// 	return
-	// }
-	// w.Write(file)
 }

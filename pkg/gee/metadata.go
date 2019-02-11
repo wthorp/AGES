@@ -86,47 +86,51 @@ func processMetadata(buffer []byte, totalSize int, quadKey string) (*QtPacket, e
 	if err != nil {
 		return nil, err
 	}
-	// Verify the packets is all there header + instances + dataBuffer + metaBuffer
+	// verify the packets is all there header + instances + dataBuffer + metaBuffer
 	if qp.Header.DataBufferOffset+qp.Header.DataBufferSize+qp.Header.MetaBufferSize != int32(totalSize) {
 		return nil, fmt.Errorf("invalid packet offsets")
 	}
-	// Read all the instances
+	// read all the instances
 	qp.Tiles = make([]TileInformation, qp.Header.NumInstances, qp.Header.NumInstances)
 	for i := int32(0); i < qp.Header.NumInstances; i++ {
-		qp.Tiles[i].UnmarshalBinary(buffer[32*(i+1) : 32*(i+2)]) // i+1 because dataInstanceSize == sizeof(QtHeader) == 32
+		// i+1 because dataInstanceSize == sizeof(QtHeader) == 32
+		if err = qp.Tiles[i].UnmarshalBinary(buffer[32*(i+1) : 32*(i+2)]); err != nil {
+			return nil, err
+		}
 	}
-	//todo: care about
-	// dbStart := 32 * (qp.Header.NumInstances + 2)
-	// mbStart := dbStart + qp.Header.DataBufferSize
-	// qp.DataBuffer = buffer[dbStart:mbStart]
-	// qp.MetaBuffer = buffer[mbStart : mbStart+qp.Header.MetaBufferSize]
+	// read data and meta buffers
+	dbStart := 32 * (qp.Header.NumInstances + 1)
+	mbStart := dbStart + qp.Header.DataBufferSize
+	qp.DataBuffer = buffer[dbStart:mbStart]
+	qp.MetaBuffer = buffer[mbStart : mbStart+qp.Header.MetaBufferSize]
 	return qp, nil
 }
 
 func unprocessMetadata(quadKey string, qp *QtPacket) ([]byte, error) {
-	bufferSize := (len(qp.Tiles) + 2) * 32 // +2 because dataInstanceSize == sizeof(QtHeader) == 32
-	buffer := make([]byte, bufferSize, bufferSize)
-	//header
-	var err error
-	headerBuffer := buffer[0:32]
-	err = qp.Header.MarshalBinary(headerBuffer)
+	bufferSize := (len(qp.Tiles) + 1) * 32 // +1 because dataInstanceSize == sizeof(QtHeader) == 32
+	buffer := make([]byte, bufferSize)
+	err := qp.Header.MarshalBinary(buffer[0:32])
 	if err != nil {
 		return nil, err
 	}
 	// Read all the instances
-	qp.Tiles = make([]TileInformation, qp.Header.NumInstances, qp.Header.NumInstances)
 	for i := int32(0); i < qp.Header.NumInstances; i++ {
 		// i+1 because dataInstanceSize == sizeof(QtHeader) == 32
 		instanceBuffer := buffer[32*(i+1) : 32*(i+2)]
 		if err = qp.Tiles[i].MarshalBinary(instanceBuffer); err != nil {
 			return nil, err
 		}
+		//qp.Tiles[i].ImageryProvider = 1 // hack the system
 	}
-	//todo: care about
-	// DataBuffer []byte
-	// MetaBuffer []byte
-	qp.Header.DataBufferSize = 0
-	qp.Header.MetaBufferSize = 0
+	//qp.Header.DataBufferSize = int32(len(qp.DataBuffer))
+	buffer = append(buffer, qp.DataBuffer...)
+	//qp.Header.MetaBufferSize = int32(len(qp.MetaBuffer))
+	buffer = append(buffer, qp.MetaBuffer...)
+
+	totalSize := len(buffer)
+	if qp.Header.DataBufferOffset+qp.Header.DataBufferSize+qp.Header.MetaBufferSize != int32(totalSize) {
+		return nil, fmt.Errorf("invalid packet offsets")
+	}
 	return buffer, nil
 }
 

@@ -30,7 +30,7 @@ func (p *TMS) GetTile(x, y, z int) ([]byte, error) {
 
 //FetchAsJPEGBytes fetches a remote image as JPEG bytes
 func (p *TMS) FetchAsJPEGBytes(url string) ([]byte, error) {
-	fmt.Printf("fetching %s\n", url)
+	//fmt.Printf("fetching %s\n", url)
 	var client = &http.Client{Timeout: p.Timeout}
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("User-Agent", "")
