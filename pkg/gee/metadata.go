@@ -96,8 +96,10 @@ func processMetadata(buffer []byte, totalSize int, quadKey string) (*QtPacket, e
 		qp.Tiles[i].UnmarshalBinary(buffer[32*(i+1) : 32*(i+2)]) // i+1 because dataInstanceSize == sizeof(QtHeader) == 32
 	}
 	//todo: care about
-	// DataBuffer []byte
-	// MetaBuffer []byte
+	// dbStart := 32 * (qp.Header.NumInstances + 2)
+	// mbStart := dbStart + qp.Header.DataBufferSize
+	// qp.DataBuffer = buffer[dbStart:mbStart]
+	// qp.MetaBuffer = buffer[mbStart : mbStart+qp.Header.MetaBufferSize]
 	return qp, nil
 }
 
@@ -105,7 +107,9 @@ func unprocessMetadata(quadKey string, qp *QtPacket) ([]byte, error) {
 	bufferSize := (len(qp.Tiles) + 2) * 32 // +2 because dataInstanceSize == sizeof(QtHeader) == 32
 	buffer := make([]byte, bufferSize, bufferSize)
 	//header
-	err := qp.Header.UnmarshalBinary(buffer[0:32])
+	var err error
+	headerBuffer := buffer[0:32]
+	err = qp.Header.MarshalBinary(headerBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +117,8 @@ func unprocessMetadata(quadKey string, qp *QtPacket) ([]byte, error) {
 	qp.Tiles = make([]TileInformation, qp.Header.NumInstances, qp.Header.NumInstances)
 	for i := int32(0); i < qp.Header.NumInstances; i++ {
 		// i+1 because dataInstanceSize == sizeof(QtHeader) == 32
-		if err := qp.Tiles[i].UnmarshalBinary(buffer[32*(i+1) : 32*(i+2)]); err != nil {
+		instanceBuffer := buffer[32*(i+1) : 32*(i+2)]
+		if err = qp.Tiles[i].MarshalBinary(instanceBuffer); err != nil {
 			return nil, err
 		}
 	}
@@ -205,7 +210,7 @@ func serialize(quadkey string, ti []TileInformation) {
 					//tileInfo[childKey] = nil
 				} else {
 
-					var instance = ti[childKey]
+					var instance = ti[i]
 					instances = append(instances, instance)
 					packTiles(childKey, instance, level+1)
 				}
@@ -252,9 +257,11 @@ func NewQtHeader(numLevels int) QtHeader {
 }
 
 //MarshalBinary returns QtHeader to a binary form
-func (qt *QtHeader) MarshalBinary() ([]byte, error) {
+func (qt *QtHeader) MarshalBinary(data []byte) error {
+	if len(data) != 32 {
+		return fmt.Errorf("Bad QtHeader byte length in MarshalBinary")
+	}
 	dv := binary.LittleEndian
-	data := make([]byte, 32, 32)
 	dv.PutUint32(data[0:4], qtMagic)
 	dv.PutUint32(data[4:8], qt.DataTypeID)
 	dv.PutUint32(data[8:12], qt.Version)
@@ -263,7 +270,7 @@ func (qt *QtHeader) MarshalBinary() ([]byte, error) {
 	dv.PutUint32(data[20:24], uint32(qt.DataBufferOffset))
 	dv.PutUint32(data[24:28], uint32(qt.DataBufferSize))
 	dv.PutUint32(data[28:32], uint32(qt.MetaBufferSize))
-	return data, qt.Validate()
+	return qt.Validate()
 }
 
 //UnmarshalBinary returns QtHeader from a binary form
@@ -299,9 +306,11 @@ func (ti *TileInformation) UnmarshalBinary(data []byte) error {
 }
 
 //MarshalBinary returns TileInformation in a binary form
-func (ti *TileInformation) MarshalBinary() ([]byte, error) {
+func (ti *TileInformation) MarshalBinary(data []byte) error {
+	if len(data) != 32 {
+		return fmt.Errorf("Bad TileInformation byte length in MarshalBinary")
+	}
 	dv := binary.LittleEndian
-	data := make([]byte, 32, 32)
 	data[0] = ti.Bits
 	dv.PutUint16(data[2:4], ti.CnodeVersion)
 	dv.PutUint16(data[4:6], ti.ImageryVersion)
@@ -314,5 +323,5 @@ func (ti *TileInformation) MarshalBinary() ([]byte, error) {
 	}
 	data[28] = ti.ImageryProvider
 	data[29] = ti.TerrainProvider
-	return data, nil
+	return nil
 }

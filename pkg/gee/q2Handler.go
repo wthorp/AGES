@@ -43,26 +43,35 @@ func metadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	qp := &QtPacket{}
 	err := unMarshalJSONFile(jsonPath, qp)
 	if err != nil {
+		fmt.Println("ti json")
 		fmt.Fprintln(w, "ti json")
 		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
 	mdBytes, err := unprocessMetadata(quadkey, qp)
 	if err != nil {
-		fmt.Fprintln(w, "unprocessMetadata")
+		fmt.Println("unprocessMetadata", err.Error())
+		fmt.Fprintln(w, "unprocessMetadata", err.Error())
 		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
-	file, err := compressPacket(mdBytes)
-	XOR(file, []byte(defaultKey), true)
-
-	//the old thing
-	filePath := filepath.Join("config", r.URL.RawQuery)
-	file, e := ioutil.ReadFile(filePath)
-	if e != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("File error: %v\n", e)
+	compressedBytes, err := compressPacket(mdBytes)
+	if err != nil {
+		fmt.Println("compressPacket", err.Error())
+		fmt.Fprintln(w, "compressPacket", err.Error())
+		w.WriteHeader(http.StatusNotImplemented)
 		return
 	}
-	w.Write(file)
+	XOR(compressedBytes, []byte(defaultKey), false)
+	w.Write(compressedBytes)
+
+	//the old thing
+	// filePath := filepath.Join("config", r.URL.RawQuery)
+	// file, e := ioutil.ReadFile(filePath)
+	// if e != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	fmt.Printf("File error: %v\n", e)
+	// 	return
+	// }
+	// w.Write(file)
 }
