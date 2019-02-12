@@ -5,18 +5,25 @@ import (
 	"net/http"
 )
 
+const maxDepth = 15
+
 //metadataHandler2 returns a q2 metadata object
 func metadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
-	numLevels := 4
-	numInstances := ((1 << uint(numLevels*2)) - 1) / 3 //4^n-1/3
+	// level := len(quadkey)
+	// numLevels := 4
+	// if maxDepth-level < numLevels {
+	// 	numLevels = maxDepth % numLevels
+	// }
+	// numInstances := ([]int{1, 5, 21, 85, 341, 1365})[4]
+	//numInstances := ((1 << uint(numLevels*2)) + 1) / 3 //4^n+1/3
+	tiles := populateTiles(quadkey, true, make([]TileInformation, 0, 0))
+	fmt.Printf("FOUND %d @ %s\n", len(tiles), quadkey)
 	qp := &QtPacket{
-		Header:     NewQtHeader(numInstances),
-		Tiles:      make([]TileInformation, numInstances, numInstances),
+		Header:     NewQtHeader(len(tiles)),
+		Tiles:      tiles,
 		DataBuffer: nil,
 		MetaBuffer: nil,
 	}
-	level = len(quadkey)
-	populateTiles(quadkey, len(quadkey))
 
 	mdBytes, err := unprocessMetadata(quadkey, qp)
 	if err != nil {
@@ -36,35 +43,19 @@ func metadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
 	w.Write(compressedBytes)
 }
 
-func populateTiles(parentKey string, parent TileInformation, level int, tileInfo map[string]TileInformation, index *int) {
-	isLeaf := false
-	if level == 4 {
-		if parent.HasSubtree() {
-			return // We have a subtree, so just return
-		}
-		isLeaf = true // No subtree, so set all children to null
+func populateTiles(quadkey string, isRoot bool, tileInfos []TileInformation) []TileInformation {
+	level := len(quadkey)
+	isLeaf := !isRoot && level%4 == 1
+	ti := TileInformation{}
+	ti.SetDefaults(quadkey, !isLeaf)
+	tileInfos = append(tileInfos, ti)
+	if isLeaf {
+		return tileInfos
 	}
-	for i := uint(0); i <= 4; i++ {
-		var childKey = fmt.Sprintf("%s%d", parentKey, i)
-		if isLeaf {
-			// No subtree so set all children to null
-			// tileInfo[childKey] = nil
-		} else if level < 4 {
-			// We are still in the middle of the subtree, so add child
-			//  only if their bits are set, otherwise set child to null.
-			if !parent.HasChild(i) {
-				//tileInfo[childKey] = nil
-			} else {
-				if index == numInstances {
-					console.log("Incorrect number of instances")
-					return nil
-				}
-
-				var instance = instances[index]
-				index++
-				tileInfo[childKey] = instance
-				populateTiles(childKey, instance, level+1)
-			}
+	for i := uint(0); i < 4; i++ { //depth first packing
+		if ti.Bits&(1<<i) != 0 {
+			tileInfos = populateTiles(fmt.Sprintf("%s%d", quadkey, i), false, tileInfos)
 		}
 	}
+	return tileInfos
 }

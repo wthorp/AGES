@@ -28,7 +28,7 @@ func (p *CachingProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
 			net.DownloadFile(filePath, url)
 		}
-		metadataHandler(w, r, quadkey)
+		metadataHandler2(w, r, quadkey)
 	case "f1": //-i
 		imageryHandler(w, r, quadkey, p.ImgHandler)
 	case "f1c": //-t

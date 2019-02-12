@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	qtMagic               = 32301
-	anyChildBitmask  byte = 0x0F //0x01 & 0x02 & 0x04 & 0x08
-	cacheFlagBitmask byte = 0x10
-	imageBitmask     byte = 0x40
-	terrainBitmask   byte = 0x80
+	qtMagic              = 32301
+	anyChildBitmask byte = 0x0F //0x01 & 0x02 & 0x04 & 0x08
+	leafBitmask     byte = 0x10
+	vectorBitmask   byte = 0x20
+	imageBitmask    byte = 0x40
+	terrainBitmask  byte = 0x80
 )
 
 //QtPacket is a quadtree packet
@@ -48,36 +49,6 @@ type TileInformation struct {
 	ImageNeighbors  [8]byte
 	ImageryProvider uint8
 	TerrainProvider uint8 //junk uint16
-}
-
-//HasSubtree says if there are other tiles beneath it
-func (ti TileInformation) HasSubtree() bool {
-	return ti.Bits&cacheFlagBitmask != 0
-}
-
-//HasImagery says if theres raster imagery here
-func (ti TileInformation) HasImagery() bool {
-	return ti.Bits&imageBitmask != 0
-}
-
-//HasTerrain says if theres terrain data here
-func (ti TileInformation) HasTerrain() bool {
-	return ti.Bits&terrainBitmask != 0
-}
-
-//HasChildren says if there are other tiles beneath it
-func (ti TileInformation) HasChildren() bool {
-	return ti.Bits&anyChildBitmask != 0
-}
-
-//HasChild says if there is a specific tile beneath it
-func (ti TileInformation) HasChild(index uint) bool {
-	return ti.Bits&(1<<index) != 0
-}
-
-//GetChildBitmask get the bitmask to understand if there are tiles beneath
-func (ti TileInformation) GetChildBitmask() byte {
-	return ti.Bits & anyChildBitmask
 }
 
 func processMetadata(buffer []byte, totalSize int, quadKey string) (*QtPacket, error) {
@@ -134,95 +105,6 @@ func unprocessMetadata(quadKey string, qp *QtPacket) ([]byte, error) {
 	return buffer, nil
 }
 
-// the following comments block is only useful if we want to store TileInformation using quadkey as the index
-func makeMap() {
-	return
-	// tileInfo := map[string]TileInformation{}
-	// var index = int32(0)
-	// var level = 0
-	// var root = instances[index]
-	// index++
-	// if quadKey == "" {
-	// 	level++ // Root tile has data at its root and one less level
-	// } else {
-	// 	tileInfo[quadKey] = root // This will only contain the child bitmask
-	// }
-
-	// var populateTiles func(parentKey string, parent TileInformation, level int)
-	// populateTiles = func(parentKey string, parent TileInformation, level int) {
-	// 	isLeaf := false
-	// 	if level == 4 {
-	// 		if parent.HasSubtree() {
-	// 			return // We have a subtree, so just return
-	// 		}
-	// 		isLeaf = true // No subtree, so set all children to null
-	// 	}
-	// 	for i := uint(0); i <= 4; i++ {
-	// 		var childKey = fmt.Sprintf("%s%d", parentKey, i)
-	// 		if isLeaf {
-	// 			// No subtree so set all children to null
-	// 			// tileInfo[childKey] = nil
-	// 		} else if level < 4 {
-	// 			// We are still in the middle of the subtree, so add child
-	// 			//  only if their bits are set, otherwise set child to null.
-	// 			if !parent.HasChild(i) {
-	// 				//tileInfo[childKey] = nil
-	// 				fmt.Printf("!parent.HasChild(%d)\n", parent.Bits)
-	// 			} else {
-	// 				fmt.Println("HEREHEREHEREHEREHEREHEREHEREHERE\n")
-	// 				if index == hdr.NumInstances {
-	// 					fmt.Println("Incorrect number of instances")
-	// 					return
-	// 				}
-
-	// 				var instance = instances[index]
-	// 				index++
-	// 				tileInfo[childKey] = instance
-	// 				fmt.Printf("childKey = %s\n", childKey)
-	// 				populateTiles(childKey, instance, level+1)
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// populateTiles(quadKey, root, level)
-}
-
-func serialize(quadkey string, ti []TileInformation) {
-	var instances []TileInformation
-	var index = int32(0)
-	var level = 0
-	if quadkey == "" {
-		level++ // Root tile has data at its root and one less level
-	} else {
-		instances[index] = ti[0] // This will only contain the child bitmask
-	}
-
-	var packTiles func(parentKey string, parent TileInformation, level int)
-	packTiles = func(parentKey string, parent TileInformation, level int) {
-		isLeaf := false
-		if level == 4 {
-			if parent.HasSubtree() {
-				return // We have a subtree, so just return
-			}
-			isLeaf = true // No subtree, so set all children to null
-		}
-		for i := uint(0); i <= 4; i++ {
-			var childKey = fmt.Sprintf("%s%d", parentKey, i)
-			if isLeaf {
-			} else if level < 4 {
-				if !parent.HasChild(i) {
-					//tileInfo[childKey] = nil
-				} else {
-
-					var instance = ti[i]
-					instances = append(instances, instance)
-					packTiles(childKey, instance, level+1)
-				}
-			}
-		}
-	}
-}
-
 //Validate checks a quadtree header for correctness
 func (qt *QtHeader) Validate() error {
 	if qt.MagicID != qtMagic {
@@ -257,6 +139,33 @@ func NewQtHeader(numInstances int) QtHeader {
 		DataBufferSize:   0,
 		MetaBufferSize:   0,
 	}
+}
+
+//SetDefaults set a quadtree tile node to default values
+func (ti *TileInformation) SetDefaults(quadkey string, hasSubTree bool) {
+	childBitMasks := anyChildBitmask
+	if len(quadkey) == 2 {
+		if quadkey[1] < '2' {
+			childBitMasks = 0x04 | 0x08 // hide < -180
+		} else {
+			childBitMasks = 0x01 | 0x02 // hide > 180
+		}
+	}
+	if hasSubTree {
+		ti.Bits = imageBitmask | childBitMasks
+		ti.CnodeVersion = 0
+	} else {
+		ti.Bits = imageBitmask | leafBitmask
+		ti.CnodeVersion = 3
+	}
+
+	// ti.TerrainVersion = 0
+	// ti.NumChannels = 0
+	// ti.TypeOffset = 0
+	// ti.VersionOffset = 0
+	// ti.ImageNeighbors = [8]byte{0, 0, 0, 0, 0, 0, 0, 0}
+	ti.ImageryProvider = 1
+	///ti.TerrainProvider = 0
 }
 
 //MarshalBinary returns QtHeader to a binary form
