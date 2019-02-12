@@ -158,14 +158,7 @@ func (ti *TileInformation) SetDefaults(quadkey string, hasSubTree bool) {
 		ti.Bits = imageBitmask | leafBitmask
 		ti.CnodeVersion = 3
 	}
-
-	// ti.TerrainVersion = 0
-	// ti.NumChannels = 0
-	// ti.TypeOffset = 0
-	// ti.VersionOffset = 0
-	// ti.ImageNeighbors = [8]byte{0, 0, 0, 0, 0, 0, 0, 0}
 	ti.ImageryProvider = 1
-	///ti.TerrainProvider = 0
 }
 
 //MarshalBinary returns QtHeader to a binary form
