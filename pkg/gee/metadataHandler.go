@@ -9,21 +9,30 @@ const maxDepth = 15
 
 //metadataHandler2 returns a q2 metadata object
 func metadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
-	// level := len(quadkey)
-	// numLevels := 4
-	// if maxDepth-level < numLevels {
-	// 	numLevels = maxDepth % numLevels
-	// }
-	// numInstances := ([]int{1, 5, 21, 85, 341, 1365})[4]
+	level := len(quadkey)
+	numLevels := 4
+	if maxDepth-level < numLevels {
+		numLevels = maxDepth % numLevels
+	}
+	numInstances := 0
+	skipBadLatitudesModifier := 0 // -1 to skip >|+/-180|
+	for l := 0; l <= numLevels; l++ {
+		if level+l == 3 { // second level starts the issue
+			skipBadLatitudesModifier = -1
+		}
+		numInstances += 1 << uint((l*2)+skipBadLatitudesModifier)
+	}
 	//numInstances := ((1 << uint(numLevels*2)) + 1) / 3 //4^n+1/3
-	tiles := populateTiles(quadkey, true, make([]TileInformation, 0, 0))
-	fmt.Printf("FOUND %d @ %s\n", len(tiles), quadkey)
+	//tiles := populateTiles(quadkey, true, make([]TileInformation, numInstances, numInstances))
+	fmt.Printf("FOUND %d @ %s\n", numInstances, quadkey)
 	qp := &QtPacket{
-		Header:     NewQtHeader(len(tiles)),
-		Tiles:      tiles,
+		Header:     NewQtHeader(numInstances),
+		Tiles:      make([]TileInformation, numInstances, numInstances),
 		DataBuffer: nil,
 		MetaBuffer: nil,
 	}
+	index := 0
+	populateTiles(&index, quadkey, true, qp.Tiles)
 
 	mdBytes, err := unprocessMetadata(quadkey, qp)
 	if err != nil {
@@ -43,19 +52,19 @@ func metadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
 	w.Write(compressedBytes)
 }
 
-func populateTiles(quadkey string, isRoot bool, tileInfos []TileInformation) []TileInformation {
+func populateTiles(index *int, quadkey string, isRoot bool, tileInfos []TileInformation) {
 	level := len(quadkey)
 	isLeaf := !isRoot && level%4 == 1
-	ti := TileInformation{}
-	ti.SetDefaults(quadkey, !isLeaf)
-	tileInfos = append(tileInfos, ti)
+	tileInfos[*index].SetDefaults(quadkey, !isLeaf)
 	if isLeaf {
-		return tileInfos
+		return
 	}
+	bits := tileInfos[*index].Bits
 	for i := uint(0); i < 4; i++ { //depth first packing
-		if ti.Bits&(1<<i) != 0 {
-			tileInfos = populateTiles(fmt.Sprintf("%s%d", quadkey, i), false, tileInfos)
+		if bits&(1<<i) != 0 {
+			*index = *index + 1
+			populateTiles(index, fmt.Sprintf("%s%d", quadkey, i), false, tileInfos)
 		}
 	}
-	return tileInfos
+	return
 }
