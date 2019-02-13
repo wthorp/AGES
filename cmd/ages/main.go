@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,11 +17,36 @@ import (
 )
 
 func main() {
+	fmt.Println(`
+	Copyright (C) 2018 William Patrick Thorp - All Rights Reserved.
+
+	This software is for demo purposes only.   Do not distribute.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+	INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+	PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+	HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
+	CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+	OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+	
+	Please point Google Earth Enterprise to http://localhost:8085/
+	Press Ctrl-C to exit
+	`)
+
+	var wms, layers string
+	flag.StringVar(&wms, "wms", "https://webgate.ec.europa.eu/estat/inspireec/gis/arcgis/services/Basemaps/Blue_marble_4326/MapServer/WMSServer", "WMS URL")
+	flag.StringVar(&layers, "layers", "0", "WMS layers parameter")
+	flag.Parse()
+	if wms == "" || layers == "" {
+		flag.PrintDefaults()
+		return
+	}
 
 	//"https: //gis.apfo.usda.gov/arcgis/rest/services/NAIP/USDA_CONUS_PRIME/ImageServer"
 	//"http://nsdig2gapps.ncsi.gov.om/arcgis/rest/services/Base_Map_EN/MapServer"
 
-	const wmsURL = "https://webgate.ec.europa.eu/estat/inspireec/gis/arcgis/services/Basemaps/Blue_marble_4326/MapServer/WMSServer?request=GetMap&service=WMS&VERSION=1.3&LAYERS=0&FORMAT=image/jpeg&WIDTH=256&HEIGHT=256&CRS=CRS:84&STYLES="
+	wmsURL := wms + "?request=GetMap&service=WMS&VERSION=1.3&LAYERS=" + layers + "&FORMAT=image/jpeg&WIDTH=256&HEIGHT=256&CRS=CRS:84&STYLES="
 	source, err := proxy.NewWMS(wmsURL, "JPEG", time.Minute)
 
 	//const token = `pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNpdHZ6ZDNpazAwNncyc282MHcwZzVsZWEifQ.CjgIsR3Z4V4pUxtcTGCf0g`

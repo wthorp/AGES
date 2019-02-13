@@ -1,7 +1,7 @@
 package tilecache_test
 
 import (
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ func TestNewEsri(t *testing.T) {
 }
 
 func testProperties(t *testing.T, layersDir string, pixels, epsg, min, max int) {
-	tc, err := tilecache.NewEsri(path.Join(layersDir, "conf.xml"))
+	tc, err := tilecache.NewEsri(filepath.Join(layersDir, "conf.xml"))
 	require.NoError(t, err)
 	//Esri properties
 	require.Equal(t, "esriMapCacheStorageModeCompact", tc.CacheFormat)

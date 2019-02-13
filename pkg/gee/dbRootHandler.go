@@ -24,10 +24,10 @@ func DBRootHandler(w http.ResponseWriter, r *http.Request) {
 		//unobfuscate
 		XOR(edrp.DbrootData, edrp.EncryptionData, true)
 		//uncompress
-		fmt.Printf("DL uncompressed %d\n", len(edrp.DbrootData))
+		//fmt.Printf("DL uncompressed %d\n", len(edrp.DbrootData))
 		dbRoot, _ := uncompressPacket(edrp.DbrootData)
 
-		fmt.Printf("DL compressed %d\n", len(dbRoot))
+		//fmt.Printf("DL compressed %d\n", len(dbRoot))
 		//read the protocol buffer
 		drp := khdb.DbRootProto{}
 		unProto(dbRoot, &drp)
@@ -61,12 +61,12 @@ func DBRootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//compress
-	fmt.Printf("UL uncompressed %d\n", len(drpBytes))
+	//fmt.Printf("UL uncompressed %d\n", len(drpBytes))
 	cDrp, err := compressPacket(drpBytes)
 	drpBytes, _ = uncompressPacket(cDrp)
 	cDrp, err = compressPacket(drpBytes)
 
-	fmt.Printf("UL compressed %d\n", len(cDrp))
+	//fmt.Printf("UL compressed %d\n", len(cDrp))
 	if err != nil {
 		fmt.Fprintln(w, "compress")
 		w.WriteHeader(http.StatusInternalServerError)

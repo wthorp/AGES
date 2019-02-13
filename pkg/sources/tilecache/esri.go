@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 
 	"AGES/pkg/core"
@@ -78,7 +77,7 @@ func calcMinMaxLevels(cache *CacheInfo, baseDir string) (int, int) {
 	minLevel := int(^uint(0) >> 1)
 	maxLevel := 0
 	for _, li := range cache.TileCacheInfo.LODInfos.LODInfo {
-		levelPath := path.Join(baseDir, "_alllayers", fmt.Sprintf("L%02d", li.LevelID))
+		levelPath := filepath.Join(baseDir, "_alllayers", fmt.Sprintf("L%02d", li.LevelID))
 		if _, err := os.Stat(levelPath); err != nil {
 			continue
 		}
@@ -148,7 +147,7 @@ func (tc *Esri) GetFileInfo(tile core.Tile) (bundlxPath, bundlePath string, imgD
 	internalCol := tile.Column % tc.ColsPerFile
 	bundleRow := tile.Row - internalRow
 	bundleCol := tile.Column - internalCol
-	bundleBasePath := path.Join(tc.BaseDirectory, "_alllayers", fmt.Sprintf("L%02d", tile.Level), fmt.Sprintf("R%04xC%04x", bundleRow, bundleCol))
+	bundleBasePath := filepath.Join(tc.BaseDirectory, "_alllayers", fmt.Sprintf("L%02d", tile.Level), fmt.Sprintf("R%04xC%04x", bundleRow, bundleCol))
 	bundlxPath = bundleBasePath + ".bundlx"
 	bundlePath = bundleBasePath + ".bundle"
 	imgDataIndex = int64((tc.ColsPerFile * internalCol) + internalRow)
@@ -170,7 +169,7 @@ func (tc *Esri) GetFilePath(tile core.Tile) string {
 	level := fmt.Sprintf("L%02d", tile.Level)
 	row := fmt.Sprintf("R%08x", tile.Row)
 	column := fmt.Sprintf("C%08x", tile.Column)
-	filePath := path.Join(tc.BaseDirectory, level, row, column)
+	filePath := filepath.Join(tc.BaseDirectory, level, row, column)
 	if tc.FileFormat == "JPEG" {
 		return filePath + ".jpg" //JPEG
 	}

@@ -50,12 +50,12 @@ func DBRootHandler2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//compress
-	fmt.Printf("UL uncompressed %d\n", len(drpBytes))
+	//fmt.Printf("UL uncompressed %d\n", len(drpBytes))
 	cDrp, err := compressPacket(drpBytes)
 	drpBytes, _ = uncompressPacket(cDrp)
 	cDrp, err = compressPacket(drpBytes)
 
-	fmt.Printf("UL compressed %d\n", len(cDrp))
+	//fmt.Printf("UL compressed %d\n", len(cDrp))
 	if err != nil {
 		fmt.Fprintln(w, "compress")
 		w.WriteHeader(http.StatusInternalServerError)

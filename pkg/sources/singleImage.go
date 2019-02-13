@@ -1,7 +1,6 @@
 package sources
 
 import (
-	"fmt"
 	"io/ioutil"
 )
 
@@ -21,6 +20,6 @@ func NewSingleImage(imgPath string) (*SingleImage, error) {
 
 //GetTile returns the cached image
 func (s *SingleImage) GetTile(x, y, z int) ([]byte, error) {
-	fmt.Printf("x %d y %d z %d\n", x, y, z)
+	//fmt.Printf("x %d y %d z %d\n", x, y, z)
 	return s.imageBytes, nil
 }

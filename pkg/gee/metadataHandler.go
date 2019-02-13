@@ -24,7 +24,7 @@ func metadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
 	}
 	//numInstances := ((1 << uint(numLevels*2)) + 1) / 3 //4^n+1/3
 	//tiles := populateTiles(quadkey, true, make([]TileInformation, numInstances, numInstances))
-	fmt.Printf("FOUND %d @ %s\n", numInstances, quadkey)
+	//fmt.Printf("FOUND %d @ %s\n", numInstances, quadkey)
 	qp := &QtPacket{
 		Header:     NewQtHeader(numInstances),
 		Tiles:      make([]TileInformation, numInstances, numInstances),
