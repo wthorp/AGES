@@ -1,5 +1,15 @@
 package gee
 
+// reference:
+// https://github.com/google/earthenterprise/blob/950c525ce56aca2ee6624199339feafe47af113e/earth_enterprise/src/common/quadtreepath.cpp#L122
+// https://github.com/AnalyticalGraphicsInc/cesium/blob/5d00c8ea29d18748dd8871b77c10b184986774bc/Source/Core/GoogleEarthEnterpriseMetadata.js#L247
+// ___ ___
+//|   |   |
+//| 3 | 2 |
+//|-------|
+//| 0 | 1 |
+//|___|___|
+
 //TileXYToQuadKey converts from x y z to quadkey
 func TileXYToQuadKey(x, y, z int) (quadkey string) {
 	for i := z; i >= 0; i-- {
@@ -19,14 +29,6 @@ func TileXYToQuadKey(x, y, z int) (quadkey string) {
 }
 
 //QuadKeyToTileXY converts from quadkey to x y z
-// https://github.com/google/earthenterprise/blob/950c525ce56aca2ee6624199339feafe47af113e/earth_enterprise/src/common/quadtreepath.cpp#L122
-// https://github.com/AnalyticalGraphicsInc/cesium/blob/5d00c8ea29d18748dd8871b77c10b184986774bc/Source/Core/GoogleEarthEnterpriseMetadata.js#L247
-// ___ ___
-//|   |   |
-//| 3 | 2 |
-//|-------|
-//| 0 | 1 |
-//|___|___|
 func QuadKeyToTileXY(quadkey string) (x, y, z int) {
 	z = len(quadkey) - 1
 	for i := 0; i < z; i++ {
