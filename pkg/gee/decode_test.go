@@ -13,8 +13,8 @@ import (
 func TestQ2(t *testing.T) {
 	rq := "q2-0313-q.3.json"
 	//	func metadataHandler(w http.ResponseWriter, r *http.Request, quadkey string, version string) {
-	rawPath := core.ApplicationDir("config", rq)
-	jsonPath := core.ApplicationDir("config", rq+".json")
+	rawPath := core.ApplicationDir("AGES", rq)
+	jsonPath := core.ApplicationDir("AGES", rq+".json")
 
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
 		//load raw

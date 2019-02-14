@@ -96,8 +96,8 @@ func createTextImage(label string) ([]byte, error) {
 
 //oldF1Handler returns a dbRoot object
 func oldF1Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
-	rawPath := core.ApplicationDir("config", r.URL.RawQuery)
-	jsonPath := core.ApplicationDir("config", r.URL.RawQuery+".json")
+	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)
+	jsonPath := core.ApplicationDir("AGES", r.URL.RawQuery+".json")
 
 	//url := path.Join(proxiedURL, "flatfile?"+r.URL.RawQuery)
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
@@ -113,7 +113,7 @@ func oldF1Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 		eip := keyhole.EarthImageryPacket{}
 		unProto(file, &eip)
 		//write image
-		imgPath := core.ApplicationDir("config", r.URL.RawQuery+"."+eip.ImageType.String())
+		imgPath := core.ApplicationDir("AGES", r.URL.RawQuery+"."+eip.ImageType.String())
 		writeFile(imgPath, eip.ImageData)
 		//write JSON
 		eip.ImageData = eip.ImageData[0:0]
@@ -133,7 +133,7 @@ func oldF1Handler(w http.ResponseWriter, r *http.Request, quadkey string) {
 		return
 	}
 	//embed eip image payload in
-	imgPath := core.ApplicationDir("config", r.URL.RawQuery+"."+eip.ImageType.String())
+	imgPath := core.ApplicationDir("AGES", r.URL.RawQuery+"."+eip.ImageType.String())
 	imgBytes, e := ioutil.ReadFile(imgPath)
 	if e != nil {
 		w.WriteHeader(http.StatusInternalServerError)

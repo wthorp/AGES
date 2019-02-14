@@ -12,8 +12,8 @@ import (
 
 //metadataHandler returns a q2 metadata object
 func metadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
-	rawPath := core.ApplicationDir("config", r.URL.RawQuery)
-	jsonPath := core.ApplicationDir("config", r.URL.RawQuery+".json")
+	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)
+	jsonPath := core.ApplicationDir("AGES", r.URL.RawQuery+".json")
 
 	//url := path.Join(proxiedURL, "flatfile?"+r.URL.RawQuery)
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
