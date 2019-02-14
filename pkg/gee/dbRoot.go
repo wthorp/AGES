@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"reflect"
@@ -25,6 +26,14 @@ func decompress(data []byte) []byte {
 	bytes, err := ioutil.ReadAll(zData)
 	check(err, "failed to create zlib reader 2")
 	return bytes
+}
+
+func unMarshalJSONFile(filePath string, jsonObject interface{}) error {
+	file, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(file, jsonObject)
 }
 
 func writeFile(path string, data []byte) {

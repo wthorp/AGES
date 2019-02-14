@@ -21,8 +21,8 @@ import (
 	"AGES/pkg/gee/keyhole"
 )
 
-//imageryHandler returns an image
-func imageryHandler(w http.ResponseWriter, r *http.Request, quadkey string, imgSource func(int, int, int) ([]byte, error)) {
+//ImageryHandler returns an image
+func ImageryHandler(w http.ResponseWriter, r *http.Request, quadkey string, imgSource func(int, int, int) ([]byte, error)) {
 	jpgType := keyhole.EarthImageryPacket_JPEG
 	imageBytes, err := imgSource(QuadKeyToTileXY(quadkey))
 	if err != nil {

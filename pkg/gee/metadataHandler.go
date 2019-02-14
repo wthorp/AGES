@@ -7,8 +7,8 @@ import (
 
 const maxDepth = 15
 
-//metadataHandler2 returns a q2 metadata object
-func metadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
+//MetadataHandler2 returns a q2 metadata object
+func MetadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
 	level := len(quadkey)
 	numLevels := 4
 	if maxDepth-level < numLevels {
