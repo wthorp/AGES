@@ -12,8 +12,8 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-//DBRootHandler returns a dbRoot object
-func DBRootHandler(w http.ResponseWriter, r *http.Request) {
+//DBRootProxy returns a dbRoot object
+func DBRootProxy(w http.ResponseWriter, r *http.Request) {
 	if _, err := os.Stat("config/dbRoot.raw"); os.IsNotExist(err) {
 		net.DownloadFile("config/dbRoot.raw", "http://www.earthenterprise.org/3d/dbRoot.v5")
 	}

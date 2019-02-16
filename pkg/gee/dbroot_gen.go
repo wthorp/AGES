@@ -37,8 +37,8 @@ const minConfig = `
   }
 `
 
-//DBRootHandler2 returns a dbRoot object from scratch
-func DBRootHandler2(w http.ResponseWriter, r *http.Request) {
+//DBRootHandler returns a dbRoot object from scratch
+func DBRootHandler(w http.ResponseWriter, r *http.Request) {
 	//get DbRoot json data
 	drp := &khdb.DbRootProto{}
 	json.Unmarshal([]byte(minConfig), drp)

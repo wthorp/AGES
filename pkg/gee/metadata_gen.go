@@ -7,8 +7,8 @@ import (
 
 const maxDepth = 15
 
-//MetadataHandler2 returns a q2 metadata object
-func MetadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
+//MetadataHandler returns a q2 metadata object
+func MetadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 	level := len(quadkey)
 	numLevels := 4
 	if maxDepth-level < numLevels {
@@ -52,6 +52,7 @@ func MetadataHandler2(w http.ResponseWriter, r *http.Request, quadkey string) {
 	w.Write(compressedBytes)
 }
 
+//populateTiles creates a populated TileInformation array, four levels deep
 func populateTiles(index *int, quadkey string, isRoot bool, tileInfos []TileInformation) {
 	level := len(quadkey)
 	isLeaf := !isRoot && level%4 == 1

@@ -59,13 +59,13 @@ func main() {
 
 	//create a url router to handle different endpoints
 	r := mux.NewRouter()
-	r.HandleFunc("/dbRoot.v5", gee.DBRootHandler2)
+	r.HandleFunc("/dbRoot.v5", gee.DBRootHandler)
 	r.HandleFunc("/flatfile", func(w http.ResponseWriter, r *http.Request) {
 		var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
 		quadkey := parts[1]
 		switch parts[0] {
 		case "q2": //-q
-			gee.MetadataHandler2(w, r, quadkey)
+			gee.MetadataHandler(w, r, quadkey)
 		case "f1": //-i
 			gee.ImageryHandler(w, r, quadkey, imgHandler.GetTile)
 		case "f1c": //-t

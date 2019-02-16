@@ -10,8 +10,8 @@ import (
 	"AGES/pkg/core"
 )
 
-//metadataHandler returns a q2 metadata object
-func metadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
+//MetadataProxy returns a q2 metadata object
+func MetadataProxy(w http.ResponseWriter, r *http.Request, quadkey string) {
 	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)
 	jsonPath := core.ApplicationDir("AGES", r.URL.RawQuery+".json")
 
