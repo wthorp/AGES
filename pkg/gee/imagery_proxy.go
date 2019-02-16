@@ -13,8 +13,15 @@ import (
 	"AGES/pkg/gee/keyhole"
 )
 
-//ImageryProxy returns a dbRoot object
-func ImageryProxy(w http.ResponseWriter, r *http.Request, quadkey string) {
+//ImageryProxy proxies imagery
+type ImageryProxy struct {
+	URL string
+}
+
+//ServeHTTP returns a imagery
+func (p *ImageryProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
+	// quadkey := parts[1]
 	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)
 	jsonPath := core.ApplicationDir("AGES", r.URL.RawQuery+".json")
 

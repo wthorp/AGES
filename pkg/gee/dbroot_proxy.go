@@ -12,8 +12,13 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-//DBRootProxy returns a dbRoot object
-func DBRootProxy(w http.ResponseWriter, r *http.Request) {
+//DBRootProxy proxies a GEE DBRoot
+type DBRootProxy struct {
+	URL string
+}
+
+//HandleFunc returns a dbRoot object
+func (p *DBRootProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if _, err := os.Stat("config/dbRoot.raw"); os.IsNotExist(err) {
 		net.DownloadFile("config/dbRoot.raw", "http://www.earthenterprise.org/3d/dbRoot.v5")
 	}

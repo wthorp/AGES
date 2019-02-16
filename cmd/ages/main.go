@@ -69,27 +69,9 @@ func main() {
 		case "f1": //-i
 			gee.ImageryHandler(w, r, quadkey, imgHandler.GetTile)
 		case "f1c": //-t
-			//note:  this is functionally disabled by MetadataHandler2
-			// filePath := core.ApplicationDir("AGES", r.URL.RawQuery)
-			// url := fmt.Sprintf("%s/flatfile?%s-%s-%s.%s", p.URL, parts[0], parts[1], parts[2], parts[3])
-			// if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			// 	net.DownloadFile(filePath, url)
-			// }
-			//gee.TerrainHandler(w, r, quadkey)
-		default:
-			//Other examples:
-			//flatfile?lf-0-icons/shield1_l.png&h=32
-			//flatfile?db=tm&qp-0-q.5
-			fmt.Printf("unhandled URL %s\n", r.URL)
+			//note:  this is functionally disabled by MetadataHandler
+			gee.TerrainHandler(w, r, quadkey)
 		}
-	})
-	// Anything we don't yet handle, use a simple reverse proxy
-	//proxyURL := "http://www.earthenterprise.org/3d/"
-	// u, _ := url.Parse(proxyURL)
-	r.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("unhandled URL %s\n", r.URL)
-		//	fmt.Printf("Using simple proxying for %s\n", r.URL)
-		// 	httputil.NewSingleHostReverseProxy(u).ServeHTTP(w, r)
 	})
 	// Start the server
 	if err := http.ListenAndServe(":8085", r); err != nil {

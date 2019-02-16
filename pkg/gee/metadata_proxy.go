@@ -6,12 +6,20 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"AGES/pkg/core"
 )
 
-//MetadataProxy returns a q2 metadata object
-func MetadataProxy(w http.ResponseWriter, r *http.Request, quadkey string) {
+//MetadataProxy proxies terrain
+type MetadataProxy struct {
+	URL string
+}
+
+//ServeHTTP returns a q2 metadata object
+func (p *MetadataProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
+	quadkey := parts[1]
 	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)
 	jsonPath := core.ApplicationDir("AGES", r.URL.RawQuery+".json")
 
