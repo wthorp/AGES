@@ -40,11 +40,13 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
+	sourceURL, _ := url.Parse(source)
 
 	rootHandler := &gee.DBRootProxy{URL: source}
 	metadataHandler := &gee.MetadataProxy{URL: source}
 	imageryHandler := &gee.ImageryProxy{URL: source}
 	terrainHandler := &gee.TerrainProxy{URL: source}
+	otherHandler := httputil.NewSingleHostReverseProxy(sourceURL)
 
 	//create a url router to handle different endpoints
 	r := mux.NewRouter()
@@ -63,14 +65,13 @@ func main() {
 			//flatfile?lf-0-icons/shield1_l.png&h=32
 			//flatfile?db=tm&qp-0-q.5
 			fmt.Printf("unhandled URL %s\n", r.URL)
+			otherHandler.ServeHTTP(w, r)
 		}
 	})
 	// Anything we don't yet handle, use a simple reverse proxy
-	u, _ := url.Parse(source)
 	r.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("unhandled URL %s\n", r.URL)
-		fmt.Printf("Using simple proxying for %s\n", r.URL)
-		httputil.NewSingleHostReverseProxy(u).ServeHTTP(w, r)
+		otherHandler.ServeHTTP(w, r)
 	})
 	// Start the server
 	if err := http.ListenAndServe(":8085", r); err != nil {
