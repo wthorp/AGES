@@ -3,16 +3,24 @@ package gee
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
-const maxDepth = 15
+//MetadataGen proxies terrain
+type MetadataGen struct {
+	MaxDepth   int
+	HasTerrain bool
+}
 
 //MetadataHandler returns a q2 metadata object
-func MetadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
+func (p *MetadataGen) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
+	quadkey := parts[1]
+
 	level := len(quadkey)
 	numLevels := 4
-	if maxDepth-level < numLevels {
-		numLevels = maxDepth % numLevels
+	if p.MaxDepth-level < numLevels {
+		numLevels = p.MaxDepth % numLevels
 	}
 	numInstances := 0
 	skipBadLatitudesModifier := 0 // -1 to skip >|+/-180|
@@ -32,7 +40,7 @@ func MetadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 		MetaBuffer: nil,
 	}
 	index := 0
-	populateTiles(&index, quadkey, true, qp.Tiles)
+	populateTiles(&index, quadkey, true, p.HasTerrain, qp.Tiles)
 
 	mdBytes, err := unprocessMetadata(quadkey, qp)
 	if err != nil {
@@ -53,10 +61,10 @@ func MetadataHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
 }
 
 //populateTiles creates a populated TileInformation array, four levels deep
-func populateTiles(index *int, quadkey string, isRoot bool, tileInfos []TileInformation) {
+func populateTiles(index *int, quadkey string, isRoot, hasTerrain bool, tileInfos []TileInformation) {
 	level := len(quadkey)
 	isLeaf := !isRoot && level%4 == 1
-	tileInfos[*index].SetDefaults(quadkey, !isLeaf)
+	tileInfos[*index].SetDefaults(quadkey, !isLeaf, hasTerrain)
 	if isLeaf {
 		return
 	}
@@ -64,7 +72,7 @@ func populateTiles(index *int, quadkey string, isRoot bool, tileInfos []TileInfo
 	for i := uint(0); i < 4; i++ { //depth first packing
 		if bits&(1<<i) != 0 {
 			*index = *index + 1
-			populateTiles(index, fmt.Sprintf("%s%d", quadkey, i), false, tileInfos)
+			populateTiles(index, fmt.Sprintf("%s%d", quadkey, i), false, hasTerrain, tileInfos)
 		}
 	}
 	return

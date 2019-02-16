@@ -52,25 +52,28 @@ func main() {
 	}
 	//configure providers
 	wmsURL := wms + "?request=GetMap&service=WMS&VERSION=1.3&LAYERS=" + layers + "&FORMAT=image/jpeg&WIDTH=256&HEIGHT=256&CRS=CRS:84&STYLES="
-	imgHandler, err := proxy.NewWMS(wmsURL, "JPEG", time.Minute)
+	imgProvider, err := proxy.NewWMS(wmsURL, "JPEG", time.Minute)
 	if err != nil {
 		log.Fatal("Imagery source:", err)
 	}
 
+	rootHandler := &gee.DBRootGen{}
+	metadataHandler := &gee.MetadataGen{MaxDepth: 15, HasTerrain: false}
+	imageryHandler := &gee.ImageryGen{Provider: imgProvider}
+	terrainHandler := &gee.TerrainGen{Provider: imgProvider}
+
 	//create a url router to handle different endpoints
 	r := mux.NewRouter()
-	r.HandleFunc("/dbRoot.v5", gee.DBRootHandler)
+	r.Handle("/dbRoot.v5", rootHandler)
 	r.HandleFunc("/flatfile", func(w http.ResponseWriter, r *http.Request) {
 		var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
-		quadkey := parts[1]
 		switch parts[0] {
 		case "q2": //-q
-			gee.MetadataHandler(w, r, quadkey)
+			metadataHandler.ServeHTTP(w, r)
 		case "f1": //-i
-			gee.ImageryHandler(w, r, quadkey, imgHandler.GetTile)
+			imageryHandler.ServeHTTP(w, r)
 		case "f1c": //-t
-			//note:  this is functionally disabled by MetadataHandler
-			gee.TerrainHandler(w, r, quadkey)
+			terrainHandler.ServeHTTP(w, r)
 		}
 	})
 	// Start the server

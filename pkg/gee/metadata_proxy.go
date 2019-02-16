@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"AGES/pkg/core"
+	"AGES/pkg/net"
 )
 
 //MetadataProxy proxies terrain
@@ -18,6 +19,15 @@ type MetadataProxy struct {
 
 //ServeHTTP returns a q2 metadata object
 func (p *MetadataProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	filePath := core.ApplicationDir("AGES", r.URL.RawQuery)
+	url := fmt.Sprintf("%s/flatfile?%s", p.URL, r.URL.RawQuery)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		err = net.DownloadFile(filePath, url)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+	}
+
 	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
 	quadkey := parts[1]
 	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)

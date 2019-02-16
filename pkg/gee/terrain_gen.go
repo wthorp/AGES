@@ -1,21 +1,16 @@
 package gee
 
 import (
-	"fmt"
-	"io/ioutil"
 	"net/http"
-
-	"AGES/pkg/core"
 )
 
-//TerrainHandler returns terrain
-func TerrainHandler(w http.ResponseWriter, r *http.Request, quadkey string) {
-	filePath := core.ApplicationDir("AGES", r.URL.RawQuery)
-	file, e := ioutil.ReadFile(filePath)
-	if e != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("File error: %v\n", e)
-		return
-	}
-	w.Write(file)
+//TerrainGen returns terrain DEMs
+type TerrainGen struct {
+	Provider ImageryProvider
+}
+
+//ServeHTTP returns a terrain DEMs
+func (p *TerrainGen) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusInternalServerError)
+	return
 }

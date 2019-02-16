@@ -22,7 +22,10 @@ func (p *TerrainProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	filePath := core.ApplicationDir("AGES", r.URL.RawQuery)
 	url := fmt.Sprintf("%s/flatfile?%s", p.URL, r.URL.RawQuery)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		net.DownloadFile(filePath, url)
+		err = net.DownloadFile(filePath, url)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
 	}
 	file, e := ioutil.ReadFile(filePath)
 	if e != nil {

@@ -37,8 +37,12 @@ const minConfig = `
   }
 `
 
-//DBRootHandler returns a dbRoot object from scratch
-func DBRootHandler(w http.ResponseWriter, r *http.Request) {
+//DBRootGen returns a dbRoot object from scratch
+type DBRootGen struct {
+}
+
+//ServeHTTP returns a dbRoot object from scratch
+func (p *DBRootGen) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//get DbRoot json data
 	drp := &khdb.DbRootProto{}
 	json.Unmarshal([]byte(minConfig), drp)
@@ -50,12 +54,7 @@ func DBRootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//compress
-	//fmt.Printf("UL uncompressed %d\n", len(drpBytes))
 	cDrp, err := compressPacket(drpBytes)
-	drpBytes, _ = uncompressPacket(cDrp)
-	cDrp, err = compressPacket(drpBytes)
-
-	//fmt.Printf("UL compressed %d\n", len(cDrp))
 	if err != nil {
 		fmt.Fprintln(w, "compress")
 		w.WriteHeader(http.StatusInternalServerError)

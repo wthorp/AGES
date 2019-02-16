@@ -8,6 +8,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"net/http"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/image/font"
@@ -18,10 +19,23 @@ import (
 	"AGES/pkg/gee/keyhole"
 )
 
+//ImageryProvider is things with GetTile
+type ImageryProvider interface {
+	GetTile(int, int, int) ([]byte, error)
+}
+
+//ImageryGen returns imagery
+type ImageryGen struct {
+	Provider ImageryProvider
+}
+
 //ImageryHandler returns an image
-func ImageryHandler(w http.ResponseWriter, r *http.Request, quadkey string, imgSource func(int, int, int) ([]byte, error)) {
+func (p *ImageryGen) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
+	quadkey := parts[1]
+
 	jpgType := keyhole.EarthImageryPacket_JPEG
-	imageBytes, err := imgSource(QuadKeyToTileXY(quadkey))
+	imageBytes, err := p.Provider.GetTile(QuadKeyToTileXY(quadkey))
 	if err != nil {
 		fmt.Printf("bad image source\n%v\n", err)
 		//fmt.Fprintf(w, "bad image source\n%v", err)

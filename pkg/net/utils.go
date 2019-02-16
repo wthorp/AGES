@@ -4,12 +4,18 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 //DownloadFile persist HTTP content to disk
-func DownloadFile(filepath string, url string) error {
+func DownloadFile(path string, url string) error {
+	//ensure directory
+	dirPath := filepath.Dir(path)
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		os.MkdirAll(dirPath, os.ModePerm)
+	}
 	// Create the file
-	out, err := os.Create(filepath)
+	out, err := os.Create(path)
 	if err != nil {
 		return err
 	}

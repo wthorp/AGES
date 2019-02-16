@@ -142,8 +142,11 @@ func NewQtHeader(numInstances int) QtHeader {
 }
 
 //SetDefaults set a quadtree tile node to default values
-func (ti *TileInformation) SetDefaults(quadkey string, hasSubTree bool) {
+func (ti *TileInformation) SetDefaults(quadkey string, hasSubTree, hasTerrain bool) {
 	childBitMasks := anyChildBitmask
+	if hasTerrain {
+		childBitMasks |= terrainBitmask
+	}
 	if len(quadkey) == 2 {
 		if quadkey[1] < '2' {
 			childBitMasks = 0x04 | 0x08 // hide < -180

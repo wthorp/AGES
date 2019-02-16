@@ -20,34 +20,30 @@ type DBRootProxy struct {
 //HandleFunc returns a dbRoot object
 func (p *DBRootProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if _, err := os.Stat("config/dbRoot.raw"); os.IsNotExist(err) {
-		net.DownloadFile("config/dbRoot.raw", "http://www.earthenterprise.org/3d/dbRoot.v5")
+		err = net.DownloadFile("config/dbRoot.raw", "http://www.earthenterprise.org/3d/dbRoot.v5")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
 	}
 	if _, err := os.Stat("config/dbRoot.js"); os.IsNotExist(err) {
 		b := readFile("config/dbRoot.raw")
 		edrp := khdb.EncryptedDbRootProto{}
-		unProto(b, &edrp)
-		//unobfuscate
-		XOR(edrp.DbrootData, edrp.EncryptionData, true)
-		//uncompress
-		//fmt.Printf("DL uncompressed %d\n", len(edrp.DbrootData))
-		dbRoot, _ := uncompressPacket(edrp.DbrootData)
-
-		//fmt.Printf("DL compressed %d\n", len(dbRoot))
-		//read the protocol buffer
 		drp := khdb.DbRootProto{}
-		unProto(dbRoot, &drp)
-		//show the content
-		b, err := json.MarshalIndent(drp, "", "  ")
+		unProto(b, &edrp)                               //read the protocol buffer
+		XOR(edrp.DbrootData, edrp.EncryptionData, true) //unobfuscate
+		dbRoot, _ := uncompressPacket(edrp.DbrootData)  //uncompress
+		unProto(dbRoot, &drp)                           //read the protocol buffer
+		b, err := json.MarshalIndent(drp, "", "  ")     //convert to json
 		if err != nil {
 			fmt.Println("error:", err)
 		}
-		writeFile("config/dbRoot.js", b)
+		writeFile("config/dbRoot.js", b) //write to disk
 		edrp.DbrootData = nil
-		e, err := json.MarshalIndent(edrp, "", "  ")
+		e, err := json.MarshalIndent(edrp, "", "  ") //convert to json
 		if err != nil {
 			fmt.Println("error:", err)
 		}
-		writeFile("config/encDbRoot.js", e)
+		writeFile("config/encDbRoot.js", e) //write to disk
 	}
 
 	//get DbRoot json data
