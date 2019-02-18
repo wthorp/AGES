@@ -20,9 +20,8 @@ type MetadataProxy struct {
 //ServeHTTP returns a q2 metadata object
 func (p *MetadataProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	filePath := core.ApplicationDir("AGES", r.URL.RawQuery)
-	url := fmt.Sprintf("%s/flatfile?%s", p.URL, r.URL.RawQuery)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		err = net.DownloadFile(filePath, url)
+		err = net.DownloadFile(filePath, r.URL.RawQuery)
 		if err != nil {
 			fmt.Println("error:", err)
 		}
