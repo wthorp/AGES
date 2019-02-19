@@ -40,11 +40,13 @@ func main() {
 	//dgMapBox := `https://api.mapbox.com/styles/v1/digitalglobe/cinvzwtia001hb4nplxp8htn3/tiles/256/%d/%d/%d?access_token=`
 	//source, err := sources.NewTMS(dgMapBox+token, "PNG", time.Minute)
 	//source, err := sources.NewSingleImage(`C:\Users\Bill\Desktop\go\AGES\pipe.jpg`)
+	//https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/WMSServer
+	//https://neo.sci.gsfc.nasa.gov/wms/wms | BlueMarbleNG-TB
 
 	var wms, layers string
 	//get command line options
-	flag.StringVar(&wms, "wms", "https://neo.sci.gsfc.nasa.gov/wms/wms", "WMS URL")
-	flag.StringVar(&layers, "layers", "BlueMarbleNG-TB", "WMS layers parameter")
+	flag.StringVar(&wms, "wms", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/WMSServer", "WMS URL")
+	flag.StringVar(&layers, "layers", "0", "WMS layers parameter")
 	flag.Parse()
 	if wms == "" || layers == "" {
 		flag.PrintDefaults()
