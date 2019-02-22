@@ -1,6 +1,7 @@
 package net
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,8 +13,10 @@ import (
 //RemapURL appends the path and query of one URL to another
 func RemapURL(newBase, oldURL *url.URL) string {
 	newURL := *newBase
-	newURL.RawPath = path.Join(newBase.RawPath, oldURL.RawPath)
+	newURL.Path = path.Join(newBase.Path, oldURL.Path)
 	newURL.RawQuery = oldURL.RawQuery
+
+	fmt.Println("caching ", newURL.String())
 	return newURL.String()
 }
 

@@ -31,6 +31,7 @@ func (p *DBRootProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("error:", err)
 		}
 	}
+
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
 		b := readFile(rawPath)
 		edrp := khdb.EncryptedDbRootProto{}
@@ -43,13 +44,13 @@ func (p *DBRootProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("error:", err)
 		}
-		writeFile(jsonEncPath, b) //write to disk
+		writeFile(jsonPath, b) //write to disk
 		edrp.DbrootData = nil
 		e, err := json.MarshalIndent(edrp, "", "  ") //convert to json
 		if err != nil {
 			fmt.Println("error:", err)
 		}
-		writeFile(jsonPath, e) //write to disk
+		writeFile(jsonEncPath, e) //write to disk
 	}
 
 	//get DbRoot json data
