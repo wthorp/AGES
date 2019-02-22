@@ -22,9 +22,11 @@ type ImageryProxy struct {
 
 //ServeHTTP returns a imagery
 func (p *ImageryProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	filePath := core.ApplicationDir(r.URL.RawQuery)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		err = net.DownloadFile(filePath, net.RemapURL(p.URL, r.URL))
+	rawPath := core.ApplicationDir(r.URL.RawQuery + ".raw")
+	jsonPath := core.ApplicationDir(r.URL.RawQuery + ".json")
+
+	if _, err := os.Stat(rawPath); os.IsNotExist(err) {
+		err = net.DownloadFile(rawPath, net.RemapURL(p.URL, r.URL))
 		if err != nil {
 			fmt.Println("error:", err)
 		}
@@ -32,8 +34,6 @@ func (p *ImageryProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
 	// quadkey := parts[1]
-	rawPath := core.ApplicationDir(r.URL.RawQuery)
-	jsonPath := core.ApplicationDir(r.URL.RawQuery + ".json")
 
 	//url := path.Join(proxiedURL, "flatfile?"+r.URL.RawQuery)
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {

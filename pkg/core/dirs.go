@@ -24,10 +24,10 @@ func ApplicationDir(subdir ...string) string {
 	switch runtime.GOOS {
 	case "windows":
 		// Windows standards: https://msdn.microsoft.com/en-us/library/windows/apps/hh465094.aspx?f=255&MSPPError=-2147217396
-		for _, env := range []string{"AppData", "AppDataLocal", "UserProfile", "Home", "AGES"} {
+		for _, env := range []string{"AppData", "AppDataLocal", "UserProfile", "Home"} {
 			val := os.Getenv(env)
 			if val != "" {
-				appdir = val
+				appdir = filepath.Join(val, "AGES")
 				break
 			}
 		}
@@ -40,8 +40,9 @@ func ApplicationDir(subdir ...string) string {
 		// Linux standards: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 		appdir = os.Getenv("XDG_DATA_HOME")
 		if appdir == "" && home != "" {
-			appdir = filepath.Join(home, ".local", "share", "AGES")
+			appdir = filepath.Join(home, ".local", "share")
 		}
+		appdir = filepath.Join(appdir, "AGES")
 	}
 	return filepath.Join(append([]string{appdir}, subdir...)...)
 }

@@ -20,9 +20,7 @@ type MetadataProxy struct {
 
 //ServeHTTP returns a q2 metadata object
 func (p *MetadataProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
-	quadkey := parts[1]
-	rawPath := core.ApplicationDir(r.URL.RawQuery)
+	rawPath := core.ApplicationDir(r.URL.RawQuery + ".raw")
 	jsonPath := core.ApplicationDir(r.URL.RawQuery + ".json")
 
 	if _, err := os.Stat(rawPath); os.IsNotExist(err) {
@@ -31,6 +29,9 @@ func (p *MetadataProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("error:", err)
 		}
 	}
+
+	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
+	quadkey := parts[1]
 
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
 		//load raw
