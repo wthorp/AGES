@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 
 	"AGES/pkg/core"
@@ -14,7 +15,7 @@ import (
 
 //TerrainProxy proxies terrain
 type TerrainProxy struct {
-	URL string
+	URL *url.URL
 }
 
 //TerrainTile does what it sounds like
@@ -24,11 +25,11 @@ type TerrainTile struct {
 
 //HandleFunc returns terrain
 func (p *TerrainProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	rawFilePath := core.ApplicationDir("AGES", r.URL.RawQuery) + ".raw"
-	jsFilePath := core.ApplicationDir("AGES", r.URL.RawQuery) + ".js"
+	rawFilePath := core.ApplicationDir(r.URL.RawQuery) + ".raw"
+	jsFilePath := core.ApplicationDir(r.URL.RawQuery) + ".js"
 
 	if _, err := os.Stat(rawFilePath); os.IsNotExist(err) {
-		err = net.DownloadFile(rawFilePath, r.URL.RawQuery)
+		err = net.DownloadFile(rawFilePath, net.RemapURL(p.URL, r.URL))
 		if err != nil {
 			fmt.Println("error:", err)
 		}

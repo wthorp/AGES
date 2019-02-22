@@ -34,18 +34,22 @@ func main() {
 
 	var source string
 	//get command line options
-	flag.StringVar(&source, "source", "http://www.earthenterprise.org/3d/", "GEE URL to proxy")
+	flag.StringVar(&source, "source", `http://www.earthenterprise.org/3d/`, "GEE URL to proxy")
 	flag.Parse()
 	if source == "" {
 		flag.PrintDefaults()
 		return
 	}
-	sourceURL, _ := url.Parse(source)
+	sourceURL, err := url.Parse(source)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	rootHandler := &gee.DBRootProxy{URL: source}
-	metadataHandler := &gee.MetadataProxy{URL: source}
-	imageryHandler := &gee.ImageryProxy{URL: source}
-	terrainHandler := &gee.TerrainProxy{URL: source}
+	rootHandler := &gee.DBRootProxy{URL: sourceURL}
+	metadataHandler := &gee.MetadataProxy{URL: sourceURL}
+	imageryHandler := &gee.ImageryProxy{URL: sourceURL}
+	terrainHandler := &gee.TerrainProxy{URL: sourceURL}
 	otherHandler := httputil.NewSingleHostReverseProxy(sourceURL)
 
 	//create a url router to handle different endpoints

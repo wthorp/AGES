@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 
+	"AGES/pkg/core"
 	khdb "AGES/pkg/gee/keyhole_dbroot"
 	"AGES/pkg/net"
 
@@ -14,19 +16,23 @@ import (
 
 //DBRootProxy proxies a GEE DBRoot
 type DBRootProxy struct {
-	URL string
+	URL *url.URL
 }
 
 //HandleFunc returns a dbRoot object
 func (p *DBRootProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if _, err := os.Stat("config/dbRoot.raw"); os.IsNotExist(err) {
-		err = net.DownloadFile("config/dbRoot.raw", "http://www.earthenterprise.org/3d/dbRoot.v5")
+	rawPath := core.ApplicationDir("dbRoot.raw")
+	jsonEncPath := core.ApplicationDir("encDbRoot.json")
+	jsonPath := core.ApplicationDir("dbRoot.json")
+
+	if _, err := os.Stat(rawPath); os.IsNotExist(err) {
+		err = net.DownloadFile(rawPath, net.RemapURL(p.URL, r.URL))
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 	}
-	if _, err := os.Stat("config/dbRoot.js"); os.IsNotExist(err) {
-		b := readFile("config/dbRoot.raw")
+	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
+		b := readFile(rawPath)
 		edrp := khdb.EncryptedDbRootProto{}
 		drp := khdb.DbRootProto{}
 		unProto(b, &edrp)                               //read the protocol buffer
@@ -37,18 +43,18 @@ func (p *DBRootProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("error:", err)
 		}
-		writeFile("config/dbRoot.js", b) //write to disk
+		writeFile(jsonEncPath, b) //write to disk
 		edrp.DbrootData = nil
 		e, err := json.MarshalIndent(edrp, "", "  ") //convert to json
 		if err != nil {
 			fmt.Println("error:", err)
 		}
-		writeFile("config/encDbRoot.js", e) //write to disk
+		writeFile(jsonPath, e) //write to disk
 	}
 
 	//get DbRoot json data
 	drp := &khdb.DbRootProto{}
-	err := unMarshalJSONFile("config/dbRoot.js", drp)
+	err := unMarshalJSONFile(jsonPath, drp)
 	if err != nil {
 		fmt.Fprintln(w, "drp json")
 		w.WriteHeader(http.StatusNotImplemented)
@@ -77,7 +83,7 @@ func (p *DBRootProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	XOR(cDrp, []byte(defaultKey), false)
 	//get EncryptedDbRoot json data
 	edrp2 := &khdb.EncryptedDbRootProto{}
-	err = unMarshalJSONFile("config/encDbRoot.js", edrp2)
+	err = unMarshalJSONFile(jsonEncPath, edrp2)
 	if err != nil {
 		fmt.Fprintln(w, "edrp json")
 		w.WriteHeader(http.StatusNotImplemented)

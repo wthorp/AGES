@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -14,25 +15,23 @@ import (
 
 //MetadataProxy proxies terrain
 type MetadataProxy struct {
-	URL string
+	URL *url.URL
 }
 
 //ServeHTTP returns a q2 metadata object
 func (p *MetadataProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	filePath := core.ApplicationDir("AGES", r.URL.RawQuery)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		err = net.DownloadFile(filePath, r.URL.RawQuery)
+	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
+	quadkey := parts[1]
+	rawPath := core.ApplicationDir(r.URL.RawQuery)
+	jsonPath := core.ApplicationDir(r.URL.RawQuery + ".json")
+
+	if _, err := os.Stat(rawPath); os.IsNotExist(err) {
+		err = net.DownloadFile(rawPath, net.RemapURL(p.URL, r.URL))
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 	}
 
-	var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
-	quadkey := parts[1]
-	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)
-	jsonPath := core.ApplicationDir("AGES", r.URL.RawQuery+".json")
-
-	//url := path.Join(proxiedURL, "flatfile?"+r.URL.RawQuery)
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
 		//load raw
 		file, e := ioutil.ReadFile(rawPath)

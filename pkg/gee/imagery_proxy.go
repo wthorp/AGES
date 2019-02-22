@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/golang/protobuf/proto"
@@ -16,15 +17,14 @@ import (
 
 //ImageryProxy proxies imagery
 type ImageryProxy struct {
-	URL string
+	URL *url.URL
 }
 
 //ServeHTTP returns a imagery
 func (p *ImageryProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	filePath := core.ApplicationDir("AGES", r.URL.RawQuery)
-	url := fmt.Sprintf("%s/flatfile?%s", p.URL, r.URL.RawQuery)
+	filePath := core.ApplicationDir(r.URL.RawQuery)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		err = net.DownloadFile(filePath, url)
+		err = net.DownloadFile(filePath, net.RemapURL(p.URL, r.URL))
 		if err != nil {
 			fmt.Println("error:", err)
 		}
@@ -32,8 +32,8 @@ func (p *ImageryProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// var parts = strings.FieldsFunc(r.URL.RawQuery, func(c rune) bool { return c == '-' || c == '.' })
 	// quadkey := parts[1]
-	rawPath := core.ApplicationDir("AGES", r.URL.RawQuery)
-	jsonPath := core.ApplicationDir("AGES", r.URL.RawQuery+".json")
+	rawPath := core.ApplicationDir(r.URL.RawQuery)
+	jsonPath := core.ApplicationDir(r.URL.RawQuery + ".json")
 
 	//url := path.Join(proxiedURL, "flatfile?"+r.URL.RawQuery)
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
@@ -49,7 +49,7 @@ func (p *ImageryProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		eip := keyhole.EarthImageryPacket{}
 		unProto(file, &eip)
 		//write image
-		imgPath := core.ApplicationDir("AGES", r.URL.RawQuery+"."+eip.ImageType.String())
+		imgPath := core.ApplicationDir(r.URL.RawQuery + "." + eip.ImageType.String())
 		writeFile(imgPath, eip.ImageData)
 		//write JSON
 		eip.ImageData = eip.ImageData[0:0]
@@ -69,7 +69,7 @@ func (p *ImageryProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//embed eip image payload in
-	imgPath := core.ApplicationDir("AGES", r.URL.RawQuery+"."+eip.ImageType.String())
+	imgPath := core.ApplicationDir(r.URL.RawQuery + "." + eip.ImageType.String())
 	imgBytes, e := ioutil.ReadFile(imgPath)
 	if e != nil {
 		w.WriteHeader(http.StatusInternalServerError)
