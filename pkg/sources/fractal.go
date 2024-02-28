@@ -9,15 +9,15 @@ import (
 	"AGES/pkg/core"
 )
 
-//Fractal returns fractal imagery
+// Fractal returns fractal imagery
 type Fractal struct{}
 
-//NewFractal return a fractal imagery for all tile requests
+// NewFractal return a fractal imagery for all tile requests
 func NewFractal() (*Fractal, error) {
 	return &Fractal{}, nil
 }
 
-//GetTile returns fractal imagery
+// GetTile returns fractal imagery
 func (f *Fractal) GetTile(x, y, z int) ([]byte, error) {
 	// splits out the URL to get the x,y,z coordinates
 	tileZ, tileX, tileY := float64(z), float64(x)-1, float64(y)-1
@@ -35,6 +35,7 @@ func (f *Fractal) GetTile(x, y, z int) ([]byte, error) {
 	wg.Add(256)
 	for cx := 0; cx < 256; cx++ {
 		go func(cx int) {
+			defer wg.Done() // Ensure that Done is called after the goroutine finishes
 			for cy := 0; cy < 256; cy++ {
 				x := -2 + tileStartX + (float64(cx)/256)*tileRange
 				y := -2 + tileStartY + (float64(cy)/256)*tileRange
@@ -54,7 +55,6 @@ func (f *Fractal) GetTile(x, y, z int) ([]byte, error) {
 				g := float64(255 - b - r)
 				col := color.RGBA{uint8(r), uint8(g), uint8(b), 255}
 				image.Set(cx, cy, col)
-				wg.Done()
 			}
 		}(cx)
 	}
