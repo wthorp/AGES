@@ -45,7 +45,7 @@ func main() {
 
 	var wms, layers string
 	//get command line options
-	flag.StringVar(&wms, "wms", "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/WMSServer", "WMS URL")
+	flag.StringVar(&wms, "wms", "https://basemap.nationalmap.gov/arcgis/services/USGSTopo/MapServer/WMSServer", "WMS URL")
 	flag.StringVar(&layers, "layers", "0", "WMS layers parameter")
 	flag.Parse()
 	if wms == "" || layers == "" {
