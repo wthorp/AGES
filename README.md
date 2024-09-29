@@ -19,7 +19,7 @@ This code is an example of easily proxying tiled raster maps for delivery to Goo
  - Terrain provider: proxy only
  - Vector provider: unimplemented
 
-## Examples Imagery
+## Example Imagery
 
 ![Alt text](images/nationalmap.png)
 
