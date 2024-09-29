@@ -6,9 +6,12 @@ This project is archived.  Please reach out if there's any value here for you.
 
 # Background
 
-Historically Google Earth Fusion services were used to manage and merge raster imagery for delivery to Goolge Earth Enterprise.
+Historically Google Earth Fusion services were used to manage and merge raster imagery for delivery to Google Earth Enterprise Clients.
 
 Fusion has been abandoned and unsupported for years, and very few organizations are best off creating their own raster backgrounds.
+
+Google Earth relied on a strange mix of deliberately obfuscated serialized C structs and protocol buffers for data delivery, 
+and it is non-trivial to send custom data streams to Google Earth clients.
 
 This code is an example of easily proxying tiled raster maps for delivery to Google Earth Enterprise Clients.
 
